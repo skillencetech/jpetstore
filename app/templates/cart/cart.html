@@ -6,7 +6,7 @@
 </div>
 
 <div id="Catalog">
-    <div id="Cart">
+    <div id="Cart" {% if not my_list %}style="width: 100%; float: none;"{% endif %}>
         <h2>Shopping Cart</h2>
         <form action="/cart/update" method="post">
             <table>
@@ -60,6 +60,22 @@
             </div>
         {% endif %}
     </div>
+
+    {% if my_list %}
+    <div id="MyList">
+        <div style="padding: 12px;">
+            <p style="margin: 0 0 10px 0; font-size: 13px;"><b>Pet Favorites</b><br>
+            <small style="color: #444;">Shop for more of your favorite pets here.</small></p>
+            <ul style="padding-left: 18px; margin: 0; font-size: 12px; line-height: 1.6;">
+                {% for product in my_list %}
+                    <li style="margin-bottom: 6px;">
+                        <a href="/catalog/products/{{ product.product_id }}"><b>{{ product.name }}</b></a> ({{ product.product_id }})
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+    {% endif %}
 
     <div id="Separator">&nbsp;</div>
 </div>

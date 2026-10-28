@@ -39,12 +39,7 @@ async def signon(
             name="account/signon.html",
             context={"error": "Invalid username or password.", "username": username}
         )
-    request.session["user"] = {
-        "userid": account.userid,
-        "firstname": account.firstname,
-        "lastname": account.lastname,
-        "email": account.email
-    }
+    request.session["user"] = await service.populate_user_session(account)
     return RedirectResponse(url="/catalog", status_code=303)
 
 @router.get("/account/signoff")
@@ -122,12 +117,7 @@ async def new_account(
     account = await service.register_account(username, password, account_info, profile_info)
     await db.commit()
 
-    request.session["user"] = {
-        "userid": account.userid,
-        "firstname": account.firstname,
-        "lastname": account.lastname,
-        "email": account.email
-    }
+    request.session["user"] = await service.populate_user_session(account)
     return RedirectResponse(url="/catalog", status_code=303)
 
 @router.get("/account/editAccountForm", response_class=HTMLResponse)
@@ -206,8 +196,7 @@ async def edit_account(
     account = await service.update_account_profile(user["userid"], password, account_info, profile_info)
     await db.commit()
 
-    request.session["user"]["firstname"] = account.firstname
-    request.session["user"]["lastname"] = account.lastname
-    request.session["user"]["email"] = account.email
+    account_with_profile = await service.get_account(user["userid"])
+    request.session["user"] = await service.populate_user_session(account_with_profile or account)
 
     return RedirectResponse(url="/catalog", status_code=303)

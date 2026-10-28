@@ -117,6 +117,7 @@
             display: block;
             font-size: 12px;
         }
+            #Banner img { vertical-align: middle; max-height: 8ex; }
     </style>
 </head>
 <body>
@@ -172,7 +173,12 @@
             <a href="https://mybatis.org"><img src="/static/images/poweredby.gif" alt="Powered By"></a>
         </div>
         <div id="Banner">
-            FastAPI AI-Native JPetStore Modernization &bull; Scalable &bull; High Throughput
+            {% set current_user = user or (request.session.get('user') if request and request.session else None) %}
+            {% if current_user and current_user.banneropt and current_user.banner_name %}
+                {{ current_user.banner_name|safe }}
+            {% else %}
+                FastAPI AI-Native JPetStore Modernization &bull; Scalable &bull; High Throughput
+            {% endif %}
         </div>
         <div id="Separator">&nbsp;</div>
     </div>

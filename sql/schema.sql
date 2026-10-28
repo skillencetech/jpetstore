@@ -163,3 +163,8 @@ CREATE TABLE sequence
     nextid             int          not null,
     constraint pk_sequence primary key (name)
 );
+
+-- 2026-10-28 10:38:00 - High-concurrency performance optimization indexes for orders, lineitems, and profile categories
+create index if not exists ix_orders_userid on orders (userid);
+create index if not exists ix_lineitem_itemid on lineitem (itemid);
+create index if not exists ix_profile_favcategory on profile (favcategory);

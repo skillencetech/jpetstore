@@ -118,3 +118,27 @@ class AccountService:
 
     async def get_banner_data(self, favcategory: str) -> Optional[BannerData]:
         return await self.repo.get_banner_data(favcategory)
+
+    async def populate_user_session(self, account: Account) -> dict:
+        banner_name = ""
+        favcategory = None
+        banneropt = 0
+        mylistopt = 0
+        if account.profile:
+            favcategory = account.profile.favcategory
+            banneropt = account.profile.banneropt or 0
+            mylistopt = account.profile.mylistopt or 0
+            if favcategory:
+                banner_data = await self.get_banner_data(favcategory)
+                if banner_data and banner_data.bannername:
+                    banner_name = banner_data.bannername.replace("<image ", "<img ").replace("<image>", "<img>")
+        return {
+            "userid": account.userid,
+            "firstname": account.firstname,
+            "lastname": account.lastname,
+            "email": account.email,
+            "favcategory": favcategory,
+            "banneropt": banneropt,
+            "mylistopt": mylistopt,
+            "banner_name": banner_name
+        }
