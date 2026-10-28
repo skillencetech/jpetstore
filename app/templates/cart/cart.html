@@ -55,8 +55,12 @@
 
         {% if cart_items %}
             <br>
-            <a href="/order/newOrderForm" class="Button">Proceed to Checkout</a>
+            <div style="text-align: center; margin-top: 15px;">
+                <a href="/order/newOrderForm" class="Button" style="padding: 6px 14px; font-size: 14px;">Proceed to Checkout</a>
+            </div>
         {% endif %}
     </div>
+
+    <div id="Separator">&nbsp;</div>
 </div>
 {% endblock %}
