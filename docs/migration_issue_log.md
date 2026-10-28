@@ -119,3 +119,13 @@
   1. **Order Authorization Guard:** In [order_router.py](file:///c:/Angappan/SourceCode/TalentGigs/haiintel/jpetstore/app/web/order_router.py), enforced session verification. Unauthenticated requests are redirected (303) to signon; unauthorized attempts by other logged-in users to view non-owned orders are blocked with `403 Forbidden`.
   2. **Hardened Transactional REST APIs:** Added `GET /api/v1/orders` (returns order history for current user session) and `GET /api/v1/orders/{order_id}` (returns order details with credit card masking `****-****-****-1234`, enforcing owner-only context with 401/403 guards).
   3. **Real-Time Dynamic Localization (i18n):** Created [app/i18n.py](file:///c:/Angappan/SourceCode/TalentGigs/haiintel/jpetstore/app/i18n.py) and [app/templates_config.py](file:///c:/Angappan/SourceCode/TalentGigs/haiintel/jpetstore/app/templates_config.py) providing context-aware translation helper `t(text)`. When a user sets `languagePreference: japanese`, navigation, cart, forms, headers, and buttons dynamically render in Japanese. Switching back to `english` immediately restores English UI.
+
+## 11. User Registration MissingGreenlet Error on Profile Access
+
+- **Date:** 2026-10-28 11:01:00
+- **Symptoms / Traceback:** `sqlalchemy.exc.MissingGreenlet: greenlet_spawn has not been called; can't call await_() here. Was IO attempted in an unexpected place? [SQL: SELECT profile.userid, ... FROM profile WHERE profile.userid = ?]` upon submitting user registration.
+- **Root Cause:** In `new_account`, after calling `await db.commit()`, SQLAlchemy expired instance attributes. When subsequent session serialization invoked `account.profile`, a synchronous lazy-load was triggered outside the async greenlet context. Additionally, `Account.profile` relationship lacked `lazy="selectin"`.
+- **Resolution:**
+  1. Updated [Account.profile](file:///c:/Angappan/SourceCode/TalentGigs/haiintel/jpetstore/app/models/account.py) and [Profile.account](file:///c:/Angappan/SourceCode/TalentGigs/haiintel/jpetstore/app/models/account.py) relationships with `lazy="selectin"`.
+  2. Linked `account.profile = profile` directly in [AccountService.register_account](file:///c:/Angappan/SourceCode/TalentGigs/haiintel/jpetstore/app/services/account_service.py).
+  3. Re-queried the fresh account via `await service.get_account(username)` with eager profile loading before session population in [account_router.py](file:///c:/Angappan/SourceCode/TalentGigs/haiintel/jpetstore/app/web/account_router.py).
