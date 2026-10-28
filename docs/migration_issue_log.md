@@ -108,3 +108,14 @@
   4. **Session-Level Preference Caching:** Cached resolved banner assets and preference flags in session, eliminating redundant SQL queries to bannerdata on every page hit.
   5. **Cryptographic Security Modernization:** Migrated from plaintext / MD5 legacy passwords to salted Scrypt key derivation (hashlib.scrypt) with transparent on-login hash upgrades.
   6. **OpenAPI 3.1 & Tool-Calling:** Introduced standard RESTful contracts and agentic LLM tool endpoints (/api/v1/tools/catalog/*) missing in the legacy monolithic MVC design.
+
+## 10. Order Transactional Security Hardening & Language Preference (i18n)
+
+- **Date:** 2026-10-28 10:53:00
+- **Symptoms / Requirements:**
+  1. Transactional order details (/order/viewOrder/{order_id}) were accessible without strict user context, exposing orders across users (IDOR vulnerability).
+  2. The account preference field for Language Preference (english, japanese) was present in the profile schema and forms, but lacked underlying translation logic (legacy JPetStore only stored the field without localization).
+- **Resolution:**
+  1. **Order Authorization Guard:** In [order_router.py](file:///c:/Angappan/SourceCode/TalentGigs/haiintel/jpetstore/app/web/order_router.py), enforced session verification. Unauthenticated requests are redirected (303) to signon; unauthorized attempts by other logged-in users to view non-owned orders are blocked with `403 Forbidden`.
+  2. **Hardened Transactional REST APIs:** Added `GET /api/v1/orders` (returns order history for current user session) and `GET /api/v1/orders/{order_id}` (returns order details with credit card masking `****-****-****-1234`, enforcing owner-only context with 401/403 guards).
+  3. **Real-Time Dynamic Localization (i18n):** Created [app/i18n.py](file:///c:/Angappan/SourceCode/TalentGigs/haiintel/jpetstore/app/i18n.py) and [app/templates_config.py](file:///c:/Angappan/SourceCode/TalentGigs/haiintel/jpetstore/app/templates_config.py) providing context-aware translation helper `t(text)`. When a user sets `languagePreference: japanese`, navigation, cart, forms, headers, and buttons dynamically render in Japanese. Switching back to `english` immediately restores English UI.
