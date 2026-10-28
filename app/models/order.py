@@ -4,6 +4,7 @@ from typing import Optional, List
 from sqlalchemy import String, Integer, Numeric, Date, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.database import Base
+from app.models.catalog import Item
 
 class Sequence(Base):
     __tablename__ = "sequence"
@@ -40,8 +41,8 @@ class Order(Base):
     cardtype: Mapped[str] = mapped_column(String(80), nullable=False)
     locale: Mapped[str] = mapped_column(String(80), nullable=False)
 
-    line_items: Mapped[List["LineItem"]] = relationship("LineItem", back_populates="order_rel")
-    statuses: Mapped[List["OrderStatus"]] = relationship("OrderStatus", back_populates="order_rel")
+    line_items: Mapped[List["LineItem"]] = relationship("LineItem", back_populates="order_rel", cascade="all, delete-orphan")
+    statuses: Mapped[List["OrderStatus"]] = relationship("OrderStatus", back_populates="order_rel", cascade="all, delete-orphan")
 
 class OrderStatus(Base):
     __tablename__ = "orderstatus"
@@ -63,3 +64,4 @@ class LineItem(Base):
     unitprice: Mapped[Decimal] = mapped_column(Numeric(10, 2), nullable=False)
 
     order_rel: Mapped["Order"] = relationship("Order", back_populates="line_items")
+    item_rel: Mapped[Optional[Item]] = relationship("Item", foreign_keys=[itemid], lazy="joined")

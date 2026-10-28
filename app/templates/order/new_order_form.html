@@ -1,0 +1,76 @@
+{% extends "common/base.html" %}
+
+{% block content %}
+<div id="Catalog">
+    <h2>Payment & Billing Details</h2>
+
+    <form method="post" action="/order/new">
+        <table>
+            <tr>
+                <th colspan="2">Payment Details</th>
+            </tr>
+            <tr>
+                <td>Card Type:</td>
+                <td>
+                    <select name="cardType">
+                        {% for ctype in creditCardTypes %}
+                            <option value="{{ ctype }}">{{ ctype }}</option>
+                        {% endfor %}
+                    </select>
+                </td>
+            </tr>
+            <tr>
+                <td>Card Number:</td>
+                <td><input type="text" name="creditCard" value="9999 9999 9999 9999" required> * Fake number!</td>
+            </tr>
+            <tr>
+                <td>Expiry Date (MM/YYYY):</td>
+                <td><input type="text" name="expiryDate" value="12/2028" required></td>
+            </tr>
+            <tr>
+                <th colspan="2">Billing Address</th>
+            </tr>
+            <tr>
+                <td>First name:</td>
+                <td><input type="text" name="billToFirstName" value="{{ account.firstname or '' }}" required></td>
+            </tr>
+            <tr>
+                <td>Last name:</td>
+                <td><input type="text" name="billToLastName" value="{{ account.lastname or '' }}" required></td>
+            </tr>
+            <tr>
+                <td>Address 1:</td>
+                <td><input type="text" size="40" name="billAddress1" value="{{ account.addr1 or '' }}" required></td>
+            </tr>
+            <tr>
+                <td>Address 2:</td>
+                <td><input type="text" size="40" name="billAddress2" value="{{ account.addr2 or '' }}"></td>
+            </tr>
+            <tr>
+                <td>City:</td>
+                <td><input type="text" name="billCity" value="{{ account.city or '' }}" required></td>
+            </tr>
+            <tr>
+                <td>State:</td>
+                <td><input type="text" size="4" name="billState" value="{{ account.state or '' }}" required></td>
+            </tr>
+            <tr>
+                <td>Zip:</td>
+                <td><input type="text" size="10" name="billZip" value="{{ account.zip or '' }}" required></td>
+            </tr>
+            <tr>
+                <td>Country:</td>
+                <td><input type="text" size="15" name="billCountry" value="{{ account.country or '' }}" required></td>
+            </tr>
+            <tr>
+                <td colspan="2">
+                    <input type="checkbox" name="shippingAddressRequired" value="true">
+                    Ship to different address...
+                </td>
+            </tr>
+        </table>
+        <br>
+        <input type="submit" value="Continue" class="Button">
+    </form>
+</div>
+{% endblock %}

@@ -1,0 +1,90 @@
+{% extends "common/base.html" %}
+
+{% block content %}
+<div id="BackLink"><a href="/catalog">Return to Main Menu</a></div>
+
+<div id="Catalog">
+    <table>
+        <tr>
+            <th align="center" colspan="2">Order #{{ order.orderid }} &bull; {{ order.orderdate }}</th>
+        </tr>
+        <tr>
+            <th colspan="2">Payment Details</th>
+        </tr>
+        <tr>
+            <td>Card Type:</td>
+            <td>{{ order.cardtype }}</td>
+        </tr>
+        <tr>
+            <td>Card Number:</td>
+            <td>{{ order.creditcard }}</td>
+        </tr>
+        <tr>
+            <td>Expiry Date:</td>
+            <td>{{ order.exprdate }}</td>
+        </tr>
+        <tr>
+            <th colspan="2">Billing Address</th>
+        </tr>
+        <tr>
+            <td>Name:</td>
+            <td>{{ order.billtofirstname }} {{ order.billtolastname }}</td>
+        </tr>
+        <tr>
+            <td>Address:</td>
+            <td>{{ order.billaddr1 }} {{ order.billaddr2 or '' }}<br>{{ order.billcity }}, {{ order.billstate }} {{ order.billzip }} {{ order.billcountry }}</td>
+        </tr>
+        <tr>
+            <th colspan="2">Shipping Address</th>
+        </tr>
+        <tr>
+            <td>Name:</td>
+            <td>{{ order.shiptofirstname }} {{ order.shiptolastname }}</td>
+        </tr>
+        <tr>
+            <td>Address:</td>
+            <td>{{ order.shipaddr1 }} {{ order.shipaddr2 or '' }}<br>{{ order.shipcity }}, {{ order.shipstate }} {{ order.shipzip }} {{ order.shipcountry }}</td>
+        </tr>
+        <tr>
+            <td>Courier:</td>
+            <td>{{ order.courier }}</td>
+        </tr>
+        <tr>
+            <td>Status:</td>
+            <td>{% if order.statuses %}{{ order.statuses[0].status }}{% else %}P{% endif %}</td>
+        </tr>
+        <tr>
+            <td colspan="2">
+                <table>
+                    <tr>
+                        <th>Item ID</th>
+                        <th>Description</th>
+                        <th>Quantity</th>
+                        <th>Price</th>
+                        <th>Total Cost</th>
+                    </tr>
+                    {% for line_item in order.line_items %}
+                    <tr>
+                        <td><a href="/catalog/items/{{ line_item.itemid }}">{{ line_item.itemid }}</a></td>
+                        <td>
+                            {% if line_item.item_rel %}
+                                {{ line_item.item_rel.attr1 or '' }} {{ line_item.item_rel.product_rel.name if line_item.item_rel.product_rel else '' }}
+                            {% else %}
+                                {{ line_item.itemid }}
+                            {% endif %}
+                        </td>
+                        <td>{{ line_item.quantity }}</td>
+                        <td>${{ "%.2f"|format(line_item.unitprice) }}</td>
+                        <td>${{ "%.2f"|format(line_item.quantity * line_item.unitprice) }}</td>
+                    </tr>
+                    {% endfor %}
+                    <tr>
+                        <th colspan="4" align="right">Total:</th>
+                        <th>${{ "%.2f"|format(order.totalprice) }}</th>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</div>
+{% endblock %}

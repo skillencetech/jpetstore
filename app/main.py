@@ -9,6 +9,7 @@ from app.database import init_db
 from app.web.catalog_router import router as catalog_router
 from app.web.cart_router import router as cart_router
 from app.web.account_router import router as account_router
+from app.web.order_router import router as order_router
 from app.api.v1.tools import router as tools_router
 
 settings = get_settings()
@@ -25,7 +26,6 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-# Stateless signed cookie session middleware per ADR-004
 app.add_middleware(
     SessionMiddleware,
     secret_key=settings.secret_key,
@@ -33,7 +33,6 @@ app.add_middleware(
     max_age=86400 * 7
 )
 
-# Static file mounts
 static_dir = os.path.join(os.path.dirname(__file__), "static")
 if os.path.exists(static_dir):
     app.mount("/static", StaticFiles(directory=static_dir), name="static")
@@ -43,6 +42,7 @@ if os.path.exists(static_dir):
 app.include_router(catalog_router)
 app.include_router(cart_router)
 app.include_router(account_router)
+app.include_router(order_router)
 
 # AI-Native API routers
 app.include_router(tools_router)

@@ -1,0 +1,28 @@
+{% extends "common/base.html" %}
+
+{% block content %}
+<div id="BackLink"><a href="/catalog">Return to Main Menu</a></div>
+
+<div id="Catalog">
+    <h2>My Orders</h2>
+
+    {% if orders %}
+    <table>
+        <tr>
+            <th>Order ID</th>
+            <th>Date</th>
+            <th>Total Price</th>
+        </tr>
+        {% for ord in orders %}
+        <tr>
+            <td><a href="/order/viewOrder/{{ ord.orderid }}">{{ ord.orderid }}</a></td>
+            <td>{{ ord.orderdate }}</td>
+            <td>${{ "%.2f"|format(ord.totalprice) }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+    {% else %}
+        <p>You have not placed any orders yet.</p>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,78 @@
+{% extends "common/base.html" %}
+
+{% block content %}
+<div id="BackLink"><a href="/catalog">Return to Main Menu</a></div>
+
+<div id="Catalog">
+    {% if error %}
+        <p style="color:red; font-weight:bold;">{{ error }}</p>
+    {% endif %}
+
+    Please confirm the information below and then press confirm...
+
+    <table>
+        <tr>
+            <th align="center" colspan="2"><font size="4"><b>Order Review</b></font></th>
+        </tr>
+        <tr>
+            <th colspan="2">Billing Address</th>
+        </tr>
+        <tr>
+            <td>Name:</td>
+            <td>{{ order.billToFirstName }} {{ order.billToLastName }}</td>
+        </tr>
+        <tr>
+            <td>Address:</td>
+            <td>{{ order.billAddress1 }} {{ order.billAddress2 }}<br>{{ order.billCity }}, {{ order.billState }} {{ order.billZip }} {{ order.billCountry }}</td>
+        </tr>
+        <tr>
+            <th colspan="2">Shipping Address</th>
+        </tr>
+        <tr>
+            <td>Name:</td>
+            <td>{{ order.shipToFirstName }} {{ order.shipToLastName }}</td>
+        </tr>
+        <tr>
+            <td>Address:</td>
+            <td>{{ order.shipAddress1 }} {{ order.shipAddress2 }}<br>{{ order.shipCity }}, {{ order.shipState }} {{ order.shipZip }} {{ order.shipCountry }}</td>
+        </tr>
+        <tr>
+            <th colspan="2">Payment</th>
+        </tr>
+        <tr>
+            <td>Card:</td>
+            <td>{{ order.cardType }} ending in {{ order.creditCard[-4:] }}</td>
+        </tr>
+    </table>
+
+    <br>
+    <h3>Items in this Order</h3>
+    <table>
+        <tr>
+            <th>Item ID</th>
+            <th>Description</th>
+            <th>Quantity</th>
+            <th>Price</th>
+            <th>Total</th>
+        </tr>
+        {% for item in cart_items %}
+        <tr>
+            <td>{{ item.item_id }}</td>
+            <td>{{ item.description }}</td>
+            <td>{{ item.quantity }}</td>
+            <td>${{ "%.2f"|format(item.list_price) }}</td>
+            <td>${{ "%.2f"|format(item.total) }}</td>
+        </tr>
+        {% endfor %}
+        <tr>
+            <th colspan="4" align="right">Total:</th>
+            <th>${{ "%.2f"|format(subtotal) }}</th>
+        </tr>
+    </table>
+
+    <br>
+    <form method="post" action="/order/confirm">
+        <input type="submit" value="Confirm Order" class="Button">
+    </form>
+</div>
+{% endblock %}
