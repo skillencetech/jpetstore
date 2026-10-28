@@ -39,6 +39,10 @@ class Product(Base):
     category_rel: Mapped["Category"] = relationship("Category", back_populates="products")
     items: Mapped[List["Item"]] = relationship("Item", back_populates="product_rel")
 
+    @property
+    def product_id(self) -> str:
+        return self.productid
+
 class Item(Base):
     __tablename__ = "item"
 
