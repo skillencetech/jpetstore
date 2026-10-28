@@ -1,4 +1,6 @@
-from typing import List, Optional
+import time
+from collections import OrderedDict
+from typing import List, Optional, Dict
 from sqlalchemy import select, or_
 from sqlalchemy.orm import selectinload
 from app.repositories.base import BaseRepository
@@ -9,7 +11,39 @@ _CATEGORY_CACHE = {}
 _PRODUCT_CACHE = {}
 _ITEM_CACHE = {}
 
+class SearchCache:
+    """High-performance LRU cache with TTL for search queries."""
+    def __init__(self, maxsize: int = 256, ttl_seconds: int = 3600):
+        self.maxsize = maxsize
+        self.ttl = ttl_seconds
+        self._cache: OrderedDict[str, tuple[float, List[Product]]] = OrderedDict()
+
+    def get(self, query: str) -> Optional[List[Product]]:
+        key = query.strip().lower()
+        if key in self._cache:
+            created_at, results = self._cache[key]
+            if time.time() - created_at < self.ttl:
+                self._cache.move_to_end(key)
+                return results
+            else:
+                del self._cache[key]
+        return None
+
+    def set(self, query: str, results: List[Product]):
+        key = query.strip().lower()
+        if key in self._cache:
+            self._cache.move_to_end(key)
+        self._cache[key] = (time.time(), results)
+        if len(self._cache) > self.maxsize:
+            self._cache.popitem(last=False)
+
+_SEARCH_CACHE = SearchCache(maxsize=256, ttl_seconds=3600)
+
 class CatalogRepository(BaseRepository):
+    @staticmethod
+    def get_search_cache() -> SearchCache:
+        return _SEARCH_CACHE
+
     async def get_category_list(self) -> List[Category]:
         if "all" in _CATEGORY_CACHE:
             return _CATEGORY_CACHE["all"]
@@ -50,6 +84,10 @@ class CatalogRepository(BaseRepository):
         return product
 
     async def search_product_list(self, keywords: str) -> List[Product]:
+        cached = _SEARCH_CACHE.get(keywords)
+        if cached is not None:
+            return cached
+
         tokens = [k.strip().lower() for k in keywords.split() if k.strip()]
         if not tokens:
             return []
@@ -61,7 +99,9 @@ class CatalogRepository(BaseRepository):
             conditions.append(Product.descn.ilike(f"%{token}%"))
         stmt = stmt.where(or_(*conditions)).order_by(Product.name)
         result = await self.session.execute(stmt)
-        return list(result.scalars().all())
+        products = list(result.scalars().all())
+        _SEARCH_CACHE.set(keywords, products)
+        return products
 
     async def get_item_list_by_product(self, productid: str) -> List[Item]:
         stmt = (

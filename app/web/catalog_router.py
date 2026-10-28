@@ -62,14 +62,23 @@ async def search(request: Request, keywords: str = "", db: AsyncSession = Depend
     product_list = await service.search_product_list(keywords)
     is_semantic = False
 
+    search_cache = CatalogRepository.get_search_cache()
+    semantic_key = f"semantic_{keywords.strip().lower()}"
+    cached_semantic = search_cache.get(semantic_key)
+
     if not product_list and keywords.strip():
-        categories = await service.get_category_list()
-        all_prods = []
-        for cat in categories:
-            prods = await service.get_product_list_by_category(cat.catid)
-            all_prods.extend(prods)
-        product_list = AIService.semantic_product_search(keywords, all_prods)
-        is_semantic = True
+        if cached_semantic is not None:
+            product_list = cached_semantic
+            is_semantic = True
+        else:
+            categories = await service.get_category_list()
+            all_prods = []
+            for cat in categories:
+                prods = await service.get_product_list_by_category(cat.catid)
+                all_prods.extend(prods)
+            product_list = AIService.semantic_product_search(keywords, all_prods)
+            is_semantic = True
+            search_cache.set(semantic_key, product_list)
 
     return templates.TemplateResponse(
         request=request,
