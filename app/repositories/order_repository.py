@@ -3,7 +3,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 from app.repositories.base import BaseRepository
 from app.models.order import Order, OrderStatus, LineItem, Sequence
-from app.models.catalog import Inventory
+from app.models.catalog import Inventory, Item, Product
 
 class OrderRepository(BaseRepository):
     async def get_next_order_id(self) -> int:
@@ -46,8 +46,8 @@ class OrderRepository(BaseRepository):
             select(Order)
             .where(Order.orderid == orderid)
             .options(
-                selectinload(Order.line_items).selectinload(LineItem.order_rel),
-                selectinload(Order.statuses)
+                selectinload(Order.statuses),
+                selectinload(Order.line_items).selectinload(LineItem.item_rel).selectinload(Item.product_rel)
             )
         )
         result = await self.session.execute(stmt)
@@ -57,6 +57,10 @@ class OrderRepository(BaseRepository):
         stmt = (
             select(Order)
             .where(Order.userid == username)
+            .options(
+                selectinload(Order.statuses),
+                selectinload(Order.line_items).selectinload(LineItem.item_rel).selectinload(Item.product_rel)
+            )
             .order_by(Order.orderdate.desc())
         )
         result = await self.session.execute(stmt)

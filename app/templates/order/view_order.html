@@ -67,8 +67,10 @@
                     <tr>
                         <td><a href="/catalog/items/{{ line_item.itemid }}">{{ line_item.itemid }}</a></td>
                         <td>
-                            {% if line_item.item_rel %}
-                                {{ line_item.item_rel.attr1 or '' }} {{ line_item.item_rel.product_rel.name if line_item.item_rel.product_rel else '' }}
+                            {% if line_item.item_rel and line_item.item_rel.product_rel %}
+                                {{ line_item.item_rel.attr1 or '' }} {{ line_item.item_rel.product_rel.name }}
+                            {% elif line_item.item_rel %}
+                                {{ line_item.item_rel.attr1 or '' }}
                             {% else %}
                                 {{ line_item.itemid }}
                             {% endif %}
@@ -86,5 +88,6 @@
             </td>
         </tr>
     </table>
+    <div id="Separator">&nbsp;</div>
 </div>
 {% endblock %}

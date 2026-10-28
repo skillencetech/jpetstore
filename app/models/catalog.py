@@ -54,9 +54,9 @@ class Item(Base):
     attr4: Mapped[Optional[str]] = mapped_column(String(80), nullable=True)
     attr5: Mapped[Optional[str]] = mapped_column(String(80), nullable=True)
 
-    product_rel: Mapped["Product"] = relationship("Product", back_populates="items")
+    product_rel: Mapped["Product"] = relationship("Product", back_populates="items", lazy="selectin")
     supplier_rel: Mapped[Optional["Supplier"]] = relationship("Supplier", back_populates="items")
-    inventory: Mapped[Optional["Inventory"]] = relationship("Inventory", back_populates="item_rel", uselist=False)
+    inventory: Mapped[Optional["Inventory"]] = relationship("Inventory", back_populates="item_rel", uselist=False, lazy="selectin")
 
 class Inventory(Base):
     __tablename__ = "inventory"
