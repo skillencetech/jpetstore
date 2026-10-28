@@ -137,3 +137,17 @@
   1. **Query-Level LRU Search Cache (`SearchCache`):** In-memory cache holding normalized search queries with configurable TTL (`ttl_seconds=3600`, `maxsize=256`) in [catalog_repository.py](file:///c:/Angappan/SourceCode/TalentGigs/haiintel/jpetstore/app/repositories/catalog_repository.py). Subsequent repeated searches resolve in ~2ms without database roundtrips.
   2. **Semantic Query Cache:** Both standard SQL keyword searches and fallback AI semantic queries (`semantic_{keywords}`) are cached in `SearchCache` within [catalog_router.py](file:///c:/Angappan/SourceCode/TalentGigs/haiintel/jpetstore/app/web/catalog_router.py).
   3. **Catalog Metadata Caching:** Category lists (`_CATEGORY_CACHE`) and category-keyed products (`_PRODUCT_CACHE`) cached in-memory, accelerating full-catalog semantic scoring passes.
+
+## 13. Pet Favorites UI Parity & Side-by-Side Float Alignment
+
+- **Date:** 2026-10-28 11:12:00
+- **Symptoms:**
+  1. `#MyList` (Pet Favorites) dropped below the `#Cart` table rather than sitting side-by-side on the right.
+  2. Product IDs in Pet Favorites rendered as empty parentheses (e.g. `Iguana ()`, `Rattlesnake ()`).
+- **Root Cause:**
+  1. An earlier responsive style in [base.html](file:///c:/Angappan/SourceCode/TalentGigs/haiintel/jpetstore/app/templates/common/base.html) had enforced `#Cart { width: 100% !important; float: none !important; }`, leaving zero horizontal space for `#MyList` and pushing it below.
+  2. In [cart.html](file:///c:/Angappan/SourceCode/TalentGigs/haiintel/jpetstore/app/templates/cart/cart.html), the template referenced `product.product_id` instead of the mapped column `product.productid`.
+- **Resolution:**
+  1. Removed the `!important` width lock from [base.html](file:///c:/Angappan/SourceCode/TalentGigs/haiintel/jpetstore/app/templates/common/base.html).
+  2. Updated [cart.html](file:///c:/Angappan/SourceCode/TalentGigs/haiintel/jpetstore/app/templates/cart/cart.html) to style `#Cart` at `width: 69%; float: left;` and `#MyList` at `width: 30%; float: right; background-color: #ccc;` when active.
+  3. Added `@property def product_id` alias on [Product](file:///c:/Angappan/SourceCode/TalentGigs/haiintel/jpetstore/app/models/catalog.py) and referenced `product.productid` in the template to correctly render `Iguana (RP-LI-02)` and `Rattlesnake (RP-SN-01)`.
