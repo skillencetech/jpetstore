@@ -1,0 +1,30 @@
+{% extends "common/base.html" %}
+
+{% block content %}
+<div id="BackLink">
+    <a href="/catalog">Return to Main Menu</a>
+</div>
+
+<div id="Catalog">
+    <h2>Search Results for: "{{ keywords }}"</h2>
+
+    {% if product_list %}
+    <table>
+        <tr>
+            <th>Product ID</th>
+            <th>Name</th>
+            <th>Category</th>
+        </tr>
+        {% for product in product_list %}
+        <tr>
+            <td><a href="/catalog/products/{{ product.productid }}">{{ product.productid }}</a></td>
+            <td>{{ product.name }}</td>
+            <td>{{ product.category }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+    {% else %}
+    <p>No products found matching your search.</p>
+    {% endif %}
+</div>
+{% endblock %}

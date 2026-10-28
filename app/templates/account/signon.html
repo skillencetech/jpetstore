@@ -1,0 +1,24 @@
+{% extends "common/base.html" %}
+
+{% block content %}
+<div id="Catalog">
+    <div id="Signon">
+        {% if error %}
+            <p style="color:red;">{{ error }}</p>
+        {% endif %}
+
+        <form action="/account/signon" method="post">
+            <p>Please enter your username and password.</p>
+            <p>
+                Username: <input type="text" name="username" value="{{ username or '' }}"><br>
+                Password: <input type="password" name="password">
+            </p>
+            <input type="submit" value="Login" class="Button">
+        </form>
+
+        <p>
+            Need a username? <a href="/account/newAccountForm">Register Now!</a>
+        </p>
+    </div>
+</div>
+{% endblock %}

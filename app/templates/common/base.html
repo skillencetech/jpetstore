@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="generator" content="FastAPI & Jinja2">
+    <title>{% block title %}JPetStore Demo{% endblock %}</title>
+    <link rel="stylesheet" href="/static/css/jpetstore.css" type="text/css">
+</head>
+<body>
+    <div id="Header">
+        <div id="Logo">
+            <div id="LogoContent">
+                <a href="/catalog"><img src="/static/images/logo-topbar.gif" alt="JPetStore"></a>
+            </div>
+        </div>
+        <div id="Menu">
+            <div id="MenuContent">
+                <a href="/cart"><img src="/static/images/cart.gif" alt="Cart"></a>
+                <img src="/static/images/separator.gif" alt="">
+                {% if user %}
+                    <a href="/account/signoff">Sign Out</a>
+                    <img src="/static/images/separator.gif" alt="">
+                    <a href="/account/profile">My Account</a>
+                {% else %}
+                    <a href="/account/signonForm">Sign In</a>
+                {% endif %}
+                <img src="/static/images/separator.gif" alt="">
+                <a href="/help">?</a>
+            </div>
+        </div>
+        <div id="Search">
+            <div id="SearchContent">
+                <form action="/catalog/search" method="get">
+                    <input type="text" name="keywords" size="14" placeholder="Search catalog...">
+                    <input type="submit" value="Search">
+                </form>
+            </div>
+        </div>
+        <div id="QuickLinks">
+            <a href="/catalog/categories/FISH"><img src="/static/images/sm_fish.gif" alt="Fish"></a>
+            <img src="/static/images/separator.gif" alt="">
+            <a href="/catalog/categories/DOGS"><img src="/static/images/sm_dogs.gif" alt="Dogs"></a>
+            <img src="/static/images/separator.gif" alt="">
+            <a href="/catalog/categories/REPTILES"><img src="/static/images/sm_reptiles.gif" alt="Reptiles"></a>
+            <img src="/static/images/separator.gif" alt="">
+            <a href="/catalog/categories/CATS"><img src="/static/images/sm_cats.gif" alt="Cats"></a>
+            <img src="/static/images/separator.gif" alt="">
+            <a href="/catalog/categories/BIRDS"><img src="/static/images/sm_birds.gif" alt="Birds"></a>
+        </div>
+    </div>
+
+    <div id="Content">
+        {% block content %}{% endblock %}
+    </div>
+
+    <div id="Footer">
+        <div id="PoweredBy">
+            <a href="https://mybatis.org"><img src="/static/images/poweredby.gif" alt="Powered By"></a>
+        </div>
+        <div id="Banner">
+            FastAPI AI-Native JPetStore Modernization &bull; Scalable &bull; High Throughput
+        </div>
+    </div>
+</body>
+</html>

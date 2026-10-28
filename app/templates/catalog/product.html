@@ -1,0 +1,34 @@
+{% extends "common/base.html" %}
+
+{% block content %}
+<div id="BackLink">
+    <a href="/catalog/categories/{{ product.category }}">Return to {{ product.category }}</a>
+</div>
+
+<div id="Catalog">
+    <h2>{{ product.name }}</h2>
+
+    <table>
+        <tr>
+            <th>Item ID</th>
+            <th>Product ID</th>
+            <th>Description</th>
+            <th>List Price</th>
+            <th>&nbsp;</th>
+        </tr>
+        {% for item in item_list %}
+        <tr>
+            <td><a href="/catalog/items/{{ item.itemid }}">{{ item.itemid }}</a></td>
+            <td>{{ item.productid }}</td>
+            <td>{{ item.attr1 or '' }} {{ product.name }}</td>
+            <td>${{ "%.2f"|format(item.listprice) }}</td>
+            <td>
+                <form action="/cart/items/{{ item.itemid }}" method="post" style="display:inline;">
+                    <input type="submit" class="Button" value="Add to Cart">
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+</div>
+{% endblock %}

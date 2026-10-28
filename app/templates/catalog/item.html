@@ -1,0 +1,45 @@
+{% extends "common/base.html" %}
+
+{% block content %}
+<div id="BackLink">
+    <a href="/catalog/products/{{ item.productid }}">Return to {{ item.productid }}</a>
+</div>
+
+<div id="Catalog">
+    <table>
+        <tr>
+            <td>
+                {{ item.product_rel.descn|safe }}
+            </td>
+        </tr>
+        <tr>
+            <td><b>{{ item.itemid }}</b></td>
+        </tr>
+        <tr>
+            <td><b><font size="4">{{ item.attr1 or '' }} {{ item.product_rel.name }}</font></b></td>
+        </tr>
+        <tr>
+            <td>{{ item.product_rel.name }}</td>
+        </tr>
+        <tr>
+            <td>
+                {% if in_stock %}
+                    {{ item.inventory.qty }} in stock.
+                {% else %}
+                    Back ordered.
+                {% endif %}
+            </td>
+        </tr>
+        <tr>
+            <td>${{ "%.2f"|format(item.listprice) }}</td>
+        </tr>
+        <tr>
+            <td>
+                <form action="/cart/items/{{ item.itemid }}" method="post">
+                    <input type="submit" class="Button" value="Add to Cart">
+                </form>
+            </td>
+        </tr>
+    </table>
+</div>
+{% endblock %}
