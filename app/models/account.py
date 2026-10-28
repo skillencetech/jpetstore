@@ -25,7 +25,7 @@ class Account(Base):
     country: Mapped[str] = mapped_column(String(20), nullable=False)
     phone: Mapped[str] = mapped_column(String(80), nullable=False)
 
-    profile: Mapped[Optional["Profile"]] = relationship("Profile", back_populates="account", uselist=False)
+    profile: Mapped[Optional["Profile"]] = relationship("Profile", back_populates="account", uselist=False, lazy="selectin")
 
 class Profile(Base):
     __tablename__ = "profile"
@@ -36,7 +36,7 @@ class Profile(Base):
     mylistopt: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     banneropt: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
 
-    account: Mapped["Account"] = relationship("Account", back_populates="profile")
+    account: Mapped["Account"] = relationship("Account", back_populates="profile", lazy="selectin")
 
 class BannerData(Base):
     __tablename__ = "bannerdata"

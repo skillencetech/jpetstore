@@ -79,6 +79,7 @@ class AccountService:
             mylistopt=1 if profile_info.get("listOption") else 0,
             banneropt=1 if profile_info.get("bannerOption") else 0
         )
+        account.profile = profile
         await self.repo.insert_account(account, profile, signon)
         return account
 

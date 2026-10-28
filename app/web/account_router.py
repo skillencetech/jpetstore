@@ -116,7 +116,8 @@ async def new_account(
     account = await service.register_account(username, password, account_info, profile_info)
     await db.commit()
 
-    request.session["user"] = await service.populate_user_session(account)
+    fresh_account = await service.get_account(username)
+    request.session["user"] = await service.populate_user_session(fresh_account or account)
     return RedirectResponse(url="/catalog", status_code=303)
 
 @router.get("/account/editAccountForm", response_class=HTMLResponse)
