@@ -1,6 +1,5 @@
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
-from fastapi.templating import Jinja2Templates
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
@@ -11,7 +10,7 @@ from app.services.account_service import AccountService
 from app.services.cart_service import CartService, CartItem
 
 router = APIRouter()
-templates = Jinja2Templates(directory="app/templates")
+from app.templates_config import templates
 
 @router.get("/cart", response_class=HTMLResponse)
 async def view_cart(request: Request, db: AsyncSession = Depends(get_db)):

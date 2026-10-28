@@ -1,6 +1,5 @@
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
-from fastapi.templating import Jinja2Templates
 from sqlalchemy.ext.asyncio import AsyncSession
 import os
 
@@ -10,7 +9,7 @@ from app.services.catalog_service import CatalogService
 from app.services.ai_service import AIService
 
 router = APIRouter()
-templates = Jinja2Templates(directory="app/templates")
+from app.templates_config import templates
 
 @router.get("/", response_class=HTMLResponse)
 async def root():

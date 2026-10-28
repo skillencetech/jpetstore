@@ -124,7 +124,9 @@ class AccountService:
         favcategory = None
         banneropt = 0
         mylistopt = 0
+        langpref = "english"
         if account.profile:
+            langpref = account.profile.langpref or "english"
             favcategory = account.profile.favcategory
             banneropt = account.profile.banneropt or 0
             mylistopt = account.profile.mylistopt or 0
@@ -137,6 +139,7 @@ class AccountService:
             "firstname": account.firstname,
             "lastname": account.lastname,
             "email": account.email,
+            "langpref": langpref,
             "favcategory": favcategory,
             "banneropt": banneropt,
             "mylistopt": mylistopt,

@@ -1,8 +1,7 @@
 from datetime import date
 from decimal import Decimal
-from fastapi import APIRouter, Depends, Request, Form
+from fastapi import APIRouter, Depends, Request, Form, HTTPException
 from fastapi.responses import HTMLResponse, RedirectResponse
-from fastapi.templating import Jinja2Templates
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
@@ -15,7 +14,7 @@ from app.services.account_service import AccountService
 from app.services.cart_service import CartService, CartItem
 
 router = APIRouter()
-templates = Jinja2Templates(directory="app/templates")
+from app.templates_config import templates
 
 CREDIT_CARD_TYPES = ["Visa", "MasterCard", "American Express"]
 
@@ -228,10 +227,20 @@ async def submit_order(request: Request, db: AsyncSession = Depends(get_db)):
 @router.get("/order/viewOrder/{order_id}", response_class=HTMLResponse)
 async def view_order(request: Request, order_id: int, db: AsyncSession = Depends(get_db)):
     user = request.session.get("user")
+    if not user:
+        return RedirectResponse(url="/account/signonForm", status_code=303)
+
     order_service = OrderService(OrderRepository(db))
     order = await order_service.get_order(order_id)
     if not order:
-        return RedirectResponse(url="/catalog", status_code=303)
+        return RedirectResponse(url="/order/list", status_code=303)
+
+    # Strict authorization: User can only view their own transactional order details
+    if order.userid != user["userid"]:
+        raise HTTPException(
+            status_code=403,
+            detail="Access Denied: You do not have authorization to view transactional details for this order."
+        )
 
     return templates.TemplateResponse(
         request=request,
@@ -253,3 +262,54 @@ async def list_orders(request: Request, db: AsyncSession = Depends(get_db)):
         name="order/list_orders.html",
         context={"orders": orders, "user": user}
     )
+
+# Hardened Transactional REST API Endpoints
+@router.get("/api/v1/orders", summary="Get Authenticated User Order History")
+async def api_get_orders(request: Request, db: AsyncSession = Depends(get_db)):
+    user = request.session.get("user")
+    if not user:
+        raise HTTPException(status_code=401, detail="Authentication required to access order history.")
+    order_service = OrderService(OrderRepository(db))
+    orders = await order_service.get_orders_by_username(user["userid"])
+    return [
+        {
+            "order_id": o.orderid,
+            "order_date": o.orderdate.isoformat() if hasattr(o.orderdate, "isoformat") else str(o.orderdate),
+            "total_price": float(o.totalprice),
+            "status": o.orderstatus_rel.status if o.orderstatus_rel else "P"
+        }
+        for o in orders
+    ]
+
+@router.get("/api/v1/orders/{order_id}", summary="Get Hardened Order Transaction Details")
+async def api_get_order_detail(request: Request, order_id: int, db: AsyncSession = Depends(get_db)):
+    user = request.session.get("user")
+    if not user:
+        raise HTTPException(status_code=401, detail="Authentication required to view order transaction.")
+    order_service = OrderService(OrderRepository(db))
+    order = await order_service.get_order(order_id)
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found.")
+    if order.userid != user["userid"]:
+        raise HTTPException(status_code=403, detail="Access Denied: You cannot inspect orders belonging to another user.")
+    return {
+        "order_id": order.orderid,
+        "userid": order.userid,
+        "order_date": order.orderdate.isoformat() if hasattr(order.orderdate, "isoformat") else str(order.orderdate),
+        "total_price": float(order.totalprice),
+        "card_type": order.cardtype,
+        "credit_card_masked": f"****-****-****-{order.creditcard[-4:]}" if len(order.creditcard) >= 4 else "****",
+        "bill_to": f"{order.billtofirstname} {order.billtolastname}",
+        "ship_to": f"{order.shiptofirstname} {order.shiptolastname}",
+        "courier": order.courier,
+        "line_items": [
+            {
+                "line_num": li.linenum,
+                "item_id": li.itemid,
+                "quantity": li.quantity,
+                "unit_price": float(li.unitprice),
+                "product_name": li.item_rel.product_rel.name if (li.item_rel and li.item_rel.product_rel) else li.itemid
+            }
+            for li in order.line_items
+        ]
+    }

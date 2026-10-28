@@ -1,6 +1,5 @@
 from fastapi import APIRouter, Depends, Request, Form
 from fastapi.responses import HTMLResponse, RedirectResponse
-from fastapi.templating import Jinja2Templates
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Optional
 
@@ -11,7 +10,7 @@ from app.services.account_service import AccountService
 from app.services.catalog_service import CatalogService
 
 router = APIRouter()
-templates = Jinja2Templates(directory="app/templates")
+from app.templates_config import templates
 
 LANGUAGES = ["english", "japanese"]
 CATEGORIES = ["FISH", "DOGS", "REPTILES", "CATS", "BIRDS"]

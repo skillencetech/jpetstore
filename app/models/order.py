@@ -44,6 +44,10 @@ class Order(Base):
     line_items: Mapped[List["LineItem"]] = relationship("LineItem", back_populates="order_rel", cascade="all, delete-orphan", lazy="selectin")
     statuses: Mapped[List["OrderStatus"]] = relationship("OrderStatus", back_populates="order_rel", cascade="all, delete-orphan", lazy="selectin")
 
+    @property
+    def lineitems(self) -> List["LineItem"]:
+        return self.line_items
+
 class OrderStatus(Base):
     __tablename__ = "orderstatus"
 

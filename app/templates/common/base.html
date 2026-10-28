@@ -132,21 +132,21 @@
                 <a href="/cart"><img src="/static/images/cart.gif" alt="Cart"></a>
                 <img src="/static/images/separator.gif" alt="">
                 {% if user %}
-                    <a href="/account/signoff">Sign Out</a>
+                    <a href="/account/signoff">{{ t("Sign Out") }}</a>
                     <img src="/static/images/separator.gif" alt="">
-                    <a href="/account/editAccountForm">My Account</a>
+                    <a href="/account/editAccountForm">{{ t("My Account") }}</a>
                 {% else %}
-                    <a href="/account/signonForm">Sign In</a>
+                    <a href="/account/signonForm">{{ t("Sign In") }}</a>
                 {% endif %}
                 <img src="/static/images/separator.gif" alt="">
-                <a href="/catalog">Catalog</a>
+                <a href="/catalog">{{ t("Catalog") }}</a>
             </div>
         </div>
         <div id="Search">
             <div id="SearchContent">
                 <form action="/catalog/search" method="get">
-                    <input type="text" name="keywords" size="14" placeholder="Search or ask AI...">
-                    <input type="submit" value="Search">
+                    <input type="text" name="keywords" size="14" placeholder="{{ t('Search or ask AI...') }}">
+                    <input type="submit" value="{{ t('Search') }}">
                 </form>
             </div>
         </div>
@@ -185,12 +185,12 @@
 
     <!-- Interactive AI Pet Advisor Drawer -->
     <div id="AIAdvisorBtn" onclick="toggleAdvisor()">
-        <span>🐾</span> AI Pet Advisor
+        <span>🐾</span> {{ t("AI Pet Advisor") }}
     </div>
 
     <div id="AIAdvisorModal">
         <div id="AIAdvisorHeader">
-            <span>🐾 Smart Pet Advisor</span>
+            <span>🐾 {{ t("Smart Pet Advisor") }}</span>
             <span style="cursor:pointer;" onclick="toggleAdvisor()">&times;</span>
         </div>
         <div id="AIAdvisorBody">
@@ -200,8 +200,8 @@
             <div id="AdvisorInsights"></div>
         </div>
         <div id="AIAdvisorFooter">
-            <input type="text" id="AdvisorInput" placeholder="Ask about pet care or diet..." onkeypress="if(event.key==='Enter') sendAdvisorQuery()">
-            <button onclick="sendAdvisorQuery()">Ask</button>
+            <input type="text" id="AdvisorInput" placeholder="{{ t('Ask about pet care or diet...') }}" onkeypress="if(event.key==='Enter') sendAdvisorQuery()">
+            <button onclick="sendAdvisorQuery()">{{ t("Ask") }}</button>
         </div>
     </div>
 
