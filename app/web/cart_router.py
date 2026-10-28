@@ -22,8 +22,9 @@ async def view_cart(request: Request, db: AsyncSession = Depends(get_db)):
             cart_items.append(CartItem(item, qty))
     subtotal = CartService.calculate_subtotal(cart_items)
     return templates.TemplateResponse(
-        "cart/cart.html",
-        {"request": request, "cart_items": cart_items, "subtotal": subtotal, "user": request.session.get("user")}
+        request=request,
+        name="cart/cart.html",
+        context={"cart_items": cart_items, "subtotal": subtotal, "user": request.session.get("user")}
     )
 
 @router.post("/cart/items/{item_id}")

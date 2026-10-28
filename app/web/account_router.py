@@ -12,7 +12,11 @@ templates = Jinja2Templates(directory="app/templates")
 
 @router.get("/account/signonForm", response_class=HTMLResponse)
 async def signon_form(request: Request):
-    return templates.TemplateResponse("account/signon.html", {"request": request, "user": request.session.get("user")})
+    return templates.TemplateResponse(
+        request=request,
+        name="account/signon.html",
+        context={"user": request.session.get("user")}
+    )
 
 @router.post("/account/signon")
 async def signon(
@@ -25,8 +29,9 @@ async def signon(
     account = await service.authenticate(username, password)
     if not account:
         return templates.TemplateResponse(
-            "account/signon.html",
-            {"request": request, "error": "Invalid username or password.", "username": username}
+            request=request,
+            name="account/signon.html",
+            context={"error": "Invalid username or password.", "username": username}
         )
     request.session["user"] = {
         "userid": account.userid,

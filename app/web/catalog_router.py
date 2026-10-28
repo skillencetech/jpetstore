@@ -17,7 +17,11 @@ async def root():
 
 @router.get("/catalog", response_class=HTMLResponse)
 async def catalog_main(request: Request):
-    return templates.TemplateResponse("catalog/main.html", {"request": request, "user": request.session.get("user")})
+    return templates.TemplateResponse(
+        request=request,
+        name="catalog/main.html",
+        context={"user": request.session.get("user")}
+    )
 
 @router.get("/catalog/categories/{category_id}", response_class=HTMLResponse)
 async def view_category(request: Request, category_id: str, db: AsyncSession = Depends(get_db)):
@@ -25,8 +29,9 @@ async def view_category(request: Request, category_id: str, db: AsyncSession = D
     category = await service.get_category(category_id)
     product_list = await service.get_product_list_by_category(category_id)
     return templates.TemplateResponse(
-        "catalog/category.html",
-        {"request": request, "category": category, "product_list": product_list, "user": request.session.get("user")}
+        request=request,
+        name="catalog/category.html",
+        context={"category": category, "product_list": product_list, "user": request.session.get("user")}
     )
 
 @router.get("/catalog/products/{product_id}", response_class=HTMLResponse)
@@ -35,8 +40,9 @@ async def view_product(request: Request, product_id: str, db: AsyncSession = Dep
     product = await service.get_product(product_id)
     item_list = await service.get_item_list_by_product(product_id)
     return templates.TemplateResponse(
-        "catalog/product.html",
-        {"request": request, "product": product, "item_list": item_list, "user": request.session.get("user")}
+        request=request,
+        name="catalog/product.html",
+        context={"product": product, "item_list": item_list, "user": request.session.get("user")}
     )
 
 @router.get("/catalog/items/{item_id}", response_class=HTMLResponse)
@@ -45,8 +51,9 @@ async def view_item(request: Request, item_id: str, db: AsyncSession = Depends(g
     item = await service.get_item(item_id)
     in_stock = await service.is_item_in_stock(item_id)
     return templates.TemplateResponse(
-        "catalog/item.html",
-        {"request": request, "item": item, "in_stock": in_stock, "user": request.session.get("user")}
+        request=request,
+        name="catalog/item.html",
+        context={"item": item, "in_stock": in_stock, "user": request.session.get("user")}
     )
 
 @router.get("/catalog/search", response_class=HTMLResponse)
@@ -54,6 +61,7 @@ async def search(request: Request, keywords: str = "", db: AsyncSession = Depend
     service = CatalogService(CatalogRepository(db))
     product_list = await service.search_product_list(keywords)
     return templates.TemplateResponse(
-        "catalog/search.html",
-        {"request": request, "product_list": product_list, "keywords": keywords, "user": request.session.get("user")}
+        request=request,
+        name="catalog/search.html",
+        context={"product_list": product_list, "keywords": keywords, "user": request.session.get("user")}
     )

@@ -1,5 +1,5 @@
 from contextlib import asynccontextmanager
-from fastapi import FastAPI
+from fastapi import FastAPI, Response
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
 import os
@@ -15,7 +15,6 @@ settings = get_settings()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup: Initialize DB schema & dataload
     await init_db()
     yield
 
@@ -34,7 +33,7 @@ app.add_middleware(
     max_age=86400 * 7
 )
 
-# Static file mounts (supporting both /static and legacy /jpetstore paths)
+# Static file mounts
 static_dir = os.path.join(os.path.dirname(__file__), "static")
 if os.path.exists(static_dir):
     app.mount("/static", StaticFiles(directory=static_dir), name="static")
@@ -47,6 +46,10 @@ app.include_router(account_router)
 
 # AI-Native API routers
 app.include_router(tools_router)
+
+@app.get("/favicon.ico", include_in_schema=False)
+async def favicon():
+    return Response(status_code=204)
 
 @app.get("/health", tags=["System"])
 async def health_check():
