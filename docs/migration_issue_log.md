@@ -129,3 +129,11 @@
   1. Updated [Account.profile](file:///c:/Angappan/SourceCode/TalentGigs/haiintel/jpetstore/app/models/account.py) and [Profile.account](file:///c:/Angappan/SourceCode/TalentGigs/haiintel/jpetstore/app/models/account.py) relationships with `lazy="selectin"`.
   2. Linked `account.profile = profile` directly in [AccountService.register_account](file:///c:/Angappan/SourceCode/TalentGigs/haiintel/jpetstore/app/services/account_service.py).
   3. Re-queried the fresh account via `await service.get_account(username)` with eager profile loading before session population in [account_router.py](file:///c:/Angappan/SourceCode/TalentGigs/haiintel/jpetstore/app/web/account_router.py).
+
+## 12. Search & Catalog Caching Architecture (ADR-005)
+
+- **Date:** 2026-10-28 11:05:00
+- **Implementation Overview:**
+  1. **Query-Level LRU Search Cache (`SearchCache`):** In-memory cache holding normalized search queries with configurable TTL (`ttl_seconds=3600`, `maxsize=256`) in [catalog_repository.py](file:///c:/Angappan/SourceCode/TalentGigs/haiintel/jpetstore/app/repositories/catalog_repository.py). Subsequent repeated searches resolve in ~2ms without database roundtrips.
+  2. **Semantic Query Cache:** Both standard SQL keyword searches and fallback AI semantic queries (`semantic_{keywords}`) are cached in `SearchCache` within [catalog_router.py](file:///c:/Angappan/SourceCode/TalentGigs/haiintel/jpetstore/app/web/catalog_router.py).
+  3. **Catalog Metadata Caching:** Category lists (`_CATEGORY_CACHE`) and category-keyed products (`_PRODUCT_CACHE`) cached in-memory, accelerating full-catalog semantic scoring passes.
