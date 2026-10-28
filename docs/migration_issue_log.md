@@ -85,3 +85,26 @@
         .selectinload(Item.product_rel)
     ```
   - Added defensive null checks in [app/templates/order/view_order.html](file:///C:/Angappan/SourceCode/TalentGigs/haiintel/jpetstore/app/templates/order/view_order.html).
+
+## 8. Preference Banner and Pet Favorites (myList) Integration
+
+- **Date:** 2026-10-28 10:38:00
+- **Symptoms / Requirement:** Legacy JPetStore rendered personalized Category Banners in the footer when banneropt == 1 and displayed a #MyList side panel in cart.html with the user's favorite category products when mylistopt == 1. Both features were missing in the modernized UI.
+- **Root Cause:** Session dictionary only held basic user attributes (userid, firstname, etc.), omitting profile preference flags and resolved banner HTML.
+- **Resolution:**
+  1. Extended AccountService.populate_user_session() to retrieve profile preferences (favcategory, banneropt, mylistopt) and load the matching HTML banner from the bannerdata table.
+  2. Updated signon, new_account, and edit_account endpoints to persist these attributes in session.
+  3. Added dynamic session hydration in cart_router.py to support existing sessions and fetch favorite products via CatalogService.get_product_list_by_category().
+  4. Implemented responsive #MyList sidebar and dynamic #Cart sizing (100% full-width for guest/disabled, 69.99% side-by-side with 30% #MyList when active).
+  5. Updated footer #Banner in base.html to render banner_name|safe with vertical centering.
+
+## 9. Schema & API Optimization Architecture vs Source Repo
+
+- **Date:** 2026-10-28 10:40:00
+- **Architectural Enhancements:**
+  1. **Async Non-Blocking I/O:** Replaced synchronous, thread-per-request Java blocking JDBC/Tomcat pool with asynchronous SQLAlchemy 2.0 and Uvicorn event loop.
+  2. **N+1 Query Elimination:** Replaced sequential MyBatis XML sub-queries with eager-loading (selectinload for LineItem.item_rel, Item.product_rel, Account.profile).
+  3. **High-Performance Foreign Key Indexing:** Added indexes (ix_orders_userid, ix_lineitem_itemid, ix_profile_favcategory) in schema.sql to accelerate high-volume user order history and catalog lookups.
+  4. **Session-Level Preference Caching:** Cached resolved banner assets and preference flags in session, eliminating redundant SQL queries to bannerdata on every page hit.
+  5. **Cryptographic Security Modernization:** Migrated from plaintext / MD5 legacy passwords to salted Scrypt key derivation (hashlib.scrypt) with transparent on-login hash upgrades.
+  6. **OpenAPI 3.1 & Tool-Calling:** Introduced standard RESTful contracts and agentic LLM tool endpoints (/api/v1/tools/catalog/*) missing in the legacy monolithic MVC design.
