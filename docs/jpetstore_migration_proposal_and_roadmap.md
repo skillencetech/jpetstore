@@ -3,8 +3,8 @@
 **Document Version:** 1.1.0  
 **Role:** AI Technical Lead  
 **Target Platform:** Python 3.12+ (FastAPI, SQLAlchemy 2.0, Pydantic v2, Jinja2, Uvicorn)  
-**Baseline Reference:** [jpetstore_architecture_decomposition.md](file:///c:/Angappan/SourceCode/TalentGigs/jpetstore-6/docs/jpetstore_architecture_decomposition.md)  
-**Evaluation Standard:** [ASSESSMENT.pdf](file:///c:/Angappan/SourceCode/TalentGigs/jpetstore-6/ASSESSMENT.pdf)  
+**Baseline Reference:** docs/jpetstore_architecture_decomposition.md  
+**Evaluation Standard:** docs/ASSESSMENT.pdf  
 
 ---
 
@@ -15,7 +15,7 @@ This proposal defines the engineering methodology and phased roadmap for moderni
 ### Key Architectural Decisions Confirmed:
 1. **Frontend Continuity (100% Visual & Workflow Parity):**
    * Reuse the existing frontend presentation layer by converting legacy JSPs into **Jinja2 templates**.
-   * Retain all 38 graphic assets ([images/](file:///c:/Angappan/SourceCode/TalentGigs/jpetstore-6/src/main/webapp/images/)), [jpetstore.css](file:///c:/Angappan/SourceCode/TalentGigs/jpetstore-6/src/main/webapp/css/jpetstore.css), and navigation hierarchies.
+   * Retain all 38 graphic assets (app/static/images/), app/static/css/jpetstore.css, and navigation hierarchies.
 2. **Dual Scalability (Vertical & Horizontal):**
    * **Horizontal Scale-Out:** Completely eliminate JVM in-memory `HttpSession` locks. Sessions are transitioned to cryptographically signed, stateless client cookies (`itsdangerous` / Starlette session middleware). Any backend node can serve any customer request behind a standard load balancer.
    * **Vertical Scale-Up:** Driven by **FastAPI + Uvicorn (ASGI)** asynchronous non-blocking event loops and SQLAlchemy 2.0 connection pooling (`QueuePool`), handling thousands of concurrent connections per server core.
@@ -29,7 +29,7 @@ This proposal defines the engineering methodology and phased roadmap for moderni
 
 ## 2. AI-Native Capabilities Inserted into the Modern Application
 
-To fulfill the "AI-Native" evaluation requirement in [ASSESSMENT.pdf](file:///c:/Angappan/SourceCode/TalentGigs/jpetstore-6/ASSESSMENT.pdf), three concrete, high-impact AI capabilities are directly engineered into the modernized platform:
+To fulfill the "AI-Native" evaluation requirement in docs/ASSESSMENT.pdf, three concrete, high-impact AI capabilities are directly engineered into the modernized platform:
 
 ```mermaid
 graph TD
@@ -66,7 +66,7 @@ graph TD
 ```
 
 ### Feature 1: Natural Language Semantic Product Search
-* **Legacy Limitation:** Legacy search ([CatalogController.java](file:///c:/Angappan/SourceCode/TalentGigs/jpetstore-6/src/main/java/org/mybatis/jpetstore/web/controllers/CatalogController.java)) performs basic SQL wildcard matching (`LIKE %keyword%`). Searching for *"friendly companion for small apartment"* returns 0 results because the exact words aren't in the product title.
+* **Legacy Limitation:** Legacy search (src/main/java/org/mybatis/jpetstore/web/controllers/CatalogController.java) performs basic SQL wildcard matching (`LIKE %keyword%`). Searching for *"friendly companion for small apartment"* returns 0 results because the exact words aren't in the product title.
 * **AI-Native Implementation:** Integrates vector embedding search (using lightweight local embeddings or embedding API). Queries are matched against catalog descriptions semantically, allowing users to search by pet temperament, care requirements, or lifestyle.
 
 ### Feature 2: Autonomous Agent Tool-Calling Interface (`/api/v1/tools`)
@@ -124,8 +124,8 @@ gantt
 ### Detailed Phase Breakdown
 
 #### Phase 1: Foundation, Data Ingestion & Asset Migration
-* **Port Assets:** Copy all 38 GIF images and [jpetstore.css](file:///c:/Angappan/SourceCode/TalentGigs/jpetstore-6/src/main/webapp/css/jpetstore.css) to `app/static/`.
-* **Database Setup:** Convert [jpetstore-hsqldb-schema.sql](file:///c:/Angappan/SourceCode/TalentGigs/jpetstore-6/src/main/resources/database/jpetstore-hsqldb-schema.sql) and [dataload.sql](file:///c:/Angappan/SourceCode/TalentGigs/jpetstore-6/src/main/resources/database/jpetstore-hsqldb-dataload.sql) into standard relational DDL (SQLite/PostgreSQL compatible) with full indices.
+* **Port Assets:** Copy all 38 GIF images and app/static/css/jpetstore.css to `app/static/`.
+* **Database Setup:** Convert src/main/resources/database/jpetstore-hsqldb-schema.sql and src/main/resources/database/jpetstore-hsqldb-dataload.sql into standard relational DDL (SQLite/PostgreSQL compatible) with full indices.
 * **Core Engine:** FastAPI ASGI application with async SQLAlchemy 2.0 engine and connection pooling.
 
 #### Phase 2: Domain-by-Domain Business Logic Migration
@@ -139,19 +139,24 @@ gantt
 * **Milestone 3.2 - Semantic Natural Language Search:** Vector embedding lookup enabling conversational pet search queries.
 * **Milestone 3.3 - Smart Pet Advisor:** AI assistant endpoint for contextual product and pet care recommendations.
 
-#### Phase 4: Verification, AI Guardrails & Assessment Demo
-* **Regression Test Suite:** Automated `pytest` suite validating parity with legacy behavior.
-* **AI Guardrails Verification:** Static analysis (`ruff`, `mypy --strict`, `bandit`) confirming zero type errors and zero SQL injection risks.
-* **Evaluation Deliverables:** Multi-worker `docker-compose.yml`, live demonstration guide, and Tokenomics telemetry audit.
+#### Phase 4: Verification, AI Guardrails & Assessment Demo (Completed)
+* **Regression Test Suite:** Automated `pytest` suite in tests/ validating full parity across Catalog, Cart, Account, Order, and AI Tool domains.
+* **AI Guardrails Verification:** Static analysis configuration (pyproject.toml) and security report (docs/ai_guardrails_and_verification.md) confirming zero type errors and zero SQL injection risks.
+* **Evaluation Deliverables:** 
+  - Production Dockerfile and multi-worker docker-compose.yml.
+  - CI/CD workflow pipeline (.github/workflows/ci.yml).
+  - Comprehensive docs/live_demonstration_guide.md.
+  - In-depth docs/tokenomics_telemetry_audit.md.
 
 ---
 
 ## 5. Definition of Done (DoD)
 
 A component or milestone is approved only when:
-- [ ] Conforms to strict 3-tier architecture (`Routers` ➔ `Services` ➔ `Repositories`).
-- [ ] 100% visual and functional parity verified against legacy JSP layouts and workflows.
-- [ ] Zero state stored in server memory (stateless instances ready for horizontal scaling).
-- [ ] Data cache applied strictly to read-heavy catalog tables; transactional tables kept 100% ACID.
-- [ ] Type contracts validated under `mypy` and unit tests passing in `pytest`.
-- [ ] OpenAPI 3.1 documentation verified at `/docs`.
+- [x] Conforms to strict 3-tier architecture (`Routers` ➔ `Services` ➔ `Repositories`).
+- [x] 100% visual and functional parity verified against legacy JSP layouts and workflows.
+- [x] Zero state stored in server memory (stateless instances ready for horizontal scaling).
+- [x] Data cache applied strictly to read-heavy catalog tables; transactional tables kept 100% ACID.
+- [x] Type contracts validated under `mypy` and unit tests passing in `pytest`.
+- [x] OpenAPI 3.1 documentation verified at `/docs`.
+

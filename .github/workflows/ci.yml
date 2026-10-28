@@ -1,0 +1,67 @@
+name: JPetStore AI-Native CI/CD Quality Pipeline
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  quality-and-test:
+    name: Code Quality, Security Guardrails & Test Suite
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.12"]
+
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: 'pip'
+
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install ruff mypy bandit pytest pytest-asyncio pytest-cov httpx
+
+      - name: Run Ruff Linter & Formatter Check
+        run: |
+          ruff check .
+          ruff format --check .
+
+      - name: Run Mypy Static Type Analysis
+        run: |
+          mypy app/
+
+      - name: Run Bandit Security & AST Vulnerability Scan (AI Guardrails)
+        run: |
+          bandit -r app/ -c pyproject.toml
+
+      - name: Execute Pytest Parity & Regression Suite
+        run: |
+          pytest --cov=app --cov-report=term-missing tests/
+
+  container-build:
+    name: Docker Container Image Validation
+    needs: quality-and-test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Container Image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          push: false
+          tags: jpetstore-ai-native:latest

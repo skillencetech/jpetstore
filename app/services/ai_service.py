@@ -2,6 +2,137 @@ import re
 from typing import List, Dict, Any, Optional
 from app.models.catalog import Product, Item
 
+# Grounded catalog dictionary matching sql/dataload.sql
+CATALOG_PRODUCTS: Dict[str, Dict[str, Any]] = {
+    "FI-SW-01": {
+        "product_id": "FI-SW-01",
+        "item_id": "EST-1",
+        "name": "Angelfish",
+        "category": "FISH",
+        "price": 16.50,
+        "description": "Saltwater reef fish from Australia with distinctive striped fins."
+    },
+    "FI-SW-02": {
+        "product_id": "FI-SW-02",
+        "item_id": "EST-3",
+        "name": "Tiger Shark",
+        "category": "FISH",
+        "price": 18.50,
+        "description": "Saltwater predatory fish from Australia for experienced aquarists."
+    },
+    "FI-FW-01": {
+        "product_id": "FI-FW-01",
+        "item_id": "EST-4",
+        "name": "Aquarium Koi",
+        "category": "FISH",
+        "price": 18.50,
+        "description": "Hardy freshwater ornamental fish from Japan, ideal for tranquil ponds and large aquariums."
+    },
+    "FI-FW-02": {
+        "product_id": "FI-FW-02",
+        "item_id": "EST-20",
+        "name": "Aquarium Goldfish",
+        "category": "FISH",
+        "price": 5.50,
+        "description": "Peaceful freshwater aquarium favorite from China, perfect for all care levels."
+    },
+    "K9-BD-01": {
+        "product_id": "K9-BD-01",
+        "item_id": "EST-6",
+        "name": "Bulldog",
+        "category": "DOGS",
+        "price": 18.50,
+        "description": "Calm, gentle companion dog from England, well-suited for families and apartments."
+    },
+    "K9-PO-02": {
+        "product_id": "K9-PO-02",
+        "item_id": "EST-8",
+        "name": "Poodle",
+        "category": "DOGS",
+        "price": 18.50,
+        "description": "Hypoallergenic, highly intelligent companion dog from France."
+    },
+    "K9-DL-01": {
+        "product_id": "K9-DL-01",
+        "item_id": "EST-9",
+        "name": "Dalmation",
+        "category": "DOGS",
+        "price": 18.50,
+        "description": "Energetic, active companion dog suited for outdoor runners and open spaces."
+    },
+    "K9-RT-01": {
+        "product_id": "K9-RT-01",
+        "item_id": "EST-28",
+        "name": "Golden Retriever",
+        "price": 155.29,
+        "description": "Affectionate, patient family dog renowned for loyalty with children."
+    },
+    "K9-RT-02": {
+        "product_id": "K9-RT-02",
+        "item_id": "EST-22",
+        "name": "Labrador Retriever",
+        "category": "DOGS",
+        "price": 135.50,
+        "description": "Friendly, athletic retrieving and companion dog."
+    },
+    "K9-CW-01": {
+        "product_id": "K9-CW-01",
+        "item_id": "EST-26",
+        "name": "Chihuahua",
+        "category": "DOGS",
+        "price": 125.50,
+        "description": "Compact, affectionate apartment companion with spirited personality."
+    },
+    "RP-SN-01": {
+        "product_id": "RP-SN-01",
+        "item_id": "EST-11",
+        "name": "Rattlesnake",
+        "category": "REPTILES",
+        "price": 18.50,
+        "description": "Exotic terrarium reptile native to the American Southwest."
+    },
+    "RP-LI-02": {
+        "product_id": "RP-LI-02",
+        "item_id": "EST-13",
+        "name": "Green Iguana",
+        "category": "REPTILES",
+        "price": 18.50,
+        "description": "Friendly vegetarian lizard companion suited for warm terrariums."
+    },
+    "FL-DSH-01": {
+        "product_id": "FL-DSH-01",
+        "item_id": "EST-15",
+        "name": "Manx Cat",
+        "category": "CATS",
+        "price": 23.50,
+        "description": "Playful, affectionate companion cat renowned for natural mouse control."
+    },
+    "FL-DLH-02": {
+        "product_id": "FL-DLH-02",
+        "item_id": "EST-16",
+        "name": "Persian Cat",
+        "category": "CATS",
+        "price": 93.50,
+        "description": "Gentle, regal indoor companion with a luxurious long coat."
+    },
+    "AV-CB-01": {
+        "product_id": "AV-CB-01",
+        "item_id": "EST-18",
+        "name": "Amazon Parrot",
+        "category": "BIRDS",
+        "price": 193.50,
+        "description": "Intelligent, vocal companion bird capable of living up to 75 years."
+    },
+    "AV-SB-02": {
+        "product_id": "AV-SB-02",
+        "item_id": "EST-19",
+        "name": "Song Finch",
+        "category": "BIRDS",
+        "price": 15.50,
+        "description": "Peaceful, melodic songbird companion with pleasant chirping."
+    }
+}
+
 SEMANTIC_KNOWLEDGE_BASE = {
     "apartment": {
         "keywords": ["apartment", "small home", "flat", "compact", "small space", "condo", "indoor"],
@@ -26,7 +157,7 @@ SEMANTIC_KNOWLEDGE_BASE = {
     "companion": {
         "keywords": ["companion", "smart", "talkative", "talking", "intelligent", "interactive", "lifelong"],
         "matches": ["AV-CB-01", "K9-PO-02", "FL-DSH-01"],
-        "reason": "High social intelligence, strong bonding instincts, and lifespan up to 75 years."
+        "reason": "High social intelligence, strong bonding instincts, and lifelong companionship."
     },
     "marine": {
         "keywords": ["saltwater", "marine", "ocean", "coral", "exotic fish"],
@@ -40,72 +171,72 @@ SEMANTIC_KNOWLEDGE_BASE = {
     }
 }
 
-CARE_RECOMMENDATIONS = {
-    "FISH": {
-        "accessories": [
-            {"name": "Water Conditioner & Dechlorinator", "price": 9.99, "tip": "Essential for neutralizing tap water chlorine."},
-            {"name": "Premium Sinking Pellets", "price": 14.50, "tip": "Nutrient-rich diet supporting natural fin coloration."},
-            {"name": "Digital Tank Thermometer", "price": 7.25, "tip": "Maintains temperature stability between 74°F - 80°F."}
-        ],
-        "general_advice": "Ensure biological filter cycling is established prior to adding new fish to prevent ammonia spikes."
-    },
-    "DOGS": {
-        "accessories": [
-            {"name": "Durable Natural Rubber Chew Toy", "price": 12.99, "tip": "Promotes dental health and reduces anxiety."},
-            {"name": "Ergonomic Reflective Walking Harness", "price": 24.50, "tip": "Evenly distributes chest pressure during daily walks."},
-            {"name": "High-Protein Probiotic Kibble", "price": 38.00, "tip": "Optimizes coat shine and digestive health."}
-        ],
-        "general_advice": "Consistent daily leash walks and mental stimulation toys prevent destructive chewing habits."
-    },
-    "CATS": {
-        "accessories": [
-            {"name": "Multi-Level Sisal Scratching Post", "price": 29.99, "tip": "Satisfies instinctual claw-stretching needs."},
-            {"name": "Hypoallergenic Clumping Litter", "price": 16.50, "tip": "99.9% dust-free formula gentle on feline paws."},
-            {"name": "Automatic Water Fountain", "price": 22.00, "tip": "Encourages hydration through continuous moving water."}
-        ],
-        "general_advice": "Cats thrive on vertical territory and dedicated scratching surfaces near rest areas."
-    },
-    "REPTILES": {
-        "accessories": [
-            {"name": "Dual Basking & UVB 10.0 Lamp", "price": 34.99, "tip": "Crucial for calcium synthesis and bone development."},
-            {"name": "Digital Hygrometer & Probe", "price": 11.50, "tip": "Monitors accurate ambient moisture levels."},
-            {"name": "Calcium Dust with Vitamin D3", "price": 8.75, "tip": "Prevents metabolic bone disease (MBD)."}
-        ],
-        "general_advice": "Maintain a strict thermal gradient across the terrarium so your reptile can thermoregulate effectively."
-    },
-    "BIRDS": {
-        "accessories": [
-            {"name": "Natural Wood Conditioning Perches", "price": 12.50, "tip": "Exercises foot tendons and maintains beak trim."},
-            {"name": "Fortified Vitamin Seed & Pellet Blend", "price": 15.00, "tip": "Balanced nutritional profile supporting plumage."},
-            {"name": "Foraging Puzzle Feeder", "price": 18.25, "tip": "Stimulates natural avian curiosity and problem-solving."}
-        ],
-        "general_advice": "Never place bird cages near non-stick cookware fumes or direct cold draft windows."
-    }
+CARE_ADVICE = {
+    "FISH": "Ensure aquarium water is properly cycled, maintain temperature stability (74°F-80°F), and feed small portions twice daily.",
+    "DOGS": "Establish daily walking routines, provide chew toys for dental stimulation, and keep up with regular vaccinations.",
+    "CATS": "Provide vertical territory like cat trees and scratchers, clean litter boxes daily, and schedule regular playtime.",
+    "REPTILES": "Maintain a strict thermal gradient across the terrarium and provide appropriate UVB lighting for healthy calcium synthesis.",
+    "BIRDS": "Provide spacious cages away from cold drafts or kitchen fumes, with diverse perches and puzzle foraging toys."
 }
 
+# Grounded catalog recommendations per category (all entities exist in JPetStore DB)
+CATEGORY_CATALOG_COMPANIONS = {
+    "FISH": [
+        CATALOG_PRODUCTS["FI-FW-01"],
+        CATALOG_PRODUCTS["FI-FW-02"],
+        CATALOG_PRODUCTS["FI-SW-01"]
+    ],
+    "DOGS": [
+        CATALOG_PRODUCTS["K9-BD-01"],
+        CATALOG_PRODUCTS["K9-PO-02"],
+        CATALOG_PRODUCTS["K9-RT-01"]
+    ],
+    "CATS": [
+        CATALOG_PRODUCTS["FL-DSH-01"],
+        CATALOG_PRODUCTS["FL-DLH-02"]
+    ],
+    "REPTILES": [
+        CATALOG_PRODUCTS["RP-LI-02"],
+        CATALOG_PRODUCTS["RP-SN-01"]
+    ],
+    "BIRDS": [
+        CATALOG_PRODUCTS["AV-SB-02"],
+        CATALOG_PRODUCTS["AV-CB-01"]
+    ]
+}
+
+
 class AIService:
+    def score_match(self, query: str, product: Product) -> int:
+        """Calculates semantic match score for automated regression testing and search ranking."""
+        q = query.lower().strip()
+        score = 0
+        if q in (product.name or "").lower():
+            score += 10
+        if q in (product.descn or "").lower():
+            score += 5
+        if product.category and q in product.category.lower():
+            score += 8
+
+        for concept, data in SEMANTIC_KNOWLEDGE_BASE.items():
+            for kw in data["keywords"]:
+                if kw in q:
+                    if product.productid in data["matches"]:
+                        score += 15
+                    if kw in (product.descn or "").lower():
+                        score += 10
+        return score
+
     @staticmethod
     def semantic_product_search(query: str, all_products: List[Product]) -> List[Product]:
         q = query.lower().strip()
         if not q:
             return all_products
 
+        service = AIService()
         scored_products: Dict[str, tuple[int, Product]] = {}
         for p in all_products:
-            score = 0
-            if q in (p.name or "").lower():
-                score += 10
-            if q in (p.descn or "").lower():
-                score += 5
-            if q in p.category.lower():
-                score += 8
-
-            for concept, data in SEMANTIC_KNOWLEDGE_BASE.items():
-                for kw in data["keywords"]:
-                    if kw in q or q in kw:
-                        if p.productid in data["matches"]:
-                            score += 15
-
+            score = service.score_match(q, p)
             if score > 0:
                 scored_products[p.productid] = (score, p)
 
@@ -120,28 +251,42 @@ class AIService:
 
         recommendations = []
         advice_list = []
+        seen_pids = set()
+
         for cat in unique_cats:
             cat_upper = cat.upper()
-            if cat_upper in CARE_RECOMMENDATIONS:
-                data = CARE_RECOMMENDATIONS[cat_upper]
-                for acc in data["accessories"]:
-                    recommendations.append({
-                        "category": cat_upper,
-                        "name": acc["name"],
-                        "price": acc["price"],
-                        "tip": acc["tip"]
-                    })
-                advice_list.append(f"**{cat_upper} Care:** {data['general_advice']}")
+            if cat_upper in CATEGORY_CATALOG_COMPANIONS:
+                companions = CATEGORY_CATALOG_COMPANIONS[cat_upper]
+                for comp in companions:
+                    if comp["product_id"] not in seen_pids:
+                        seen_pids.add(comp["product_id"])
+                        recommendations.append({
+                            "category": cat_upper,
+                            "product_id": comp["product_id"],
+                            "item_id": comp["item_id"],
+                            "name": comp["name"],
+                            "price": comp["price"],
+                            "description": comp["description"],
+                            "tip": comp["description"]
+                        })
+            if cat_upper in CARE_ADVICE:
+                advice_list.append(f"**{cat_upper} Care:** {CARE_ADVICE[cat_upper]}")
 
         return {
             "categories": unique_cats,
+            "categories_analyzed": unique_cats,
             "advice": advice_list,
+            "care_advice": advice_list,
             "recommended_accessories": recommendations[:6]
         }
 
+    def get_recommendations(self, categories: List[str]) -> Dict[str, Any]:
+        """Alias helper for test suite backwards compatibility."""
+        return self.get_cart_advisor_insights(categories)
+
     @staticmethod
-    def answer_pet_question(question: str) -> Dict[str, Any]:
-        q = question.lower()
+    def answer_pet_question(question: Optional[str]) -> Dict[str, Any]:
+        q = (question or "").lower().strip()
         matched_concept = None
         for concept, data in SEMANTIC_KNOWLEDGE_BASE.items():
             for kw in data["keywords"]:
@@ -153,28 +298,59 @@ class AIService:
 
         if matched_concept:
             concept, data = matched_concept
-            response_text = f"For **{concept.replace('_', ' ').title()}** pet needs: {data['reason']} We recommend exploring items like: {', '.join(data['matches'])}."
-            recommended_ids = data["matches"]
+            matched_pids = data["matches"]
+            response_text = (
+                f"For **{concept.replace('_', ' ').title()}** pet seekers: {data['reason']} "
+                f"Here are top-matched pets available in our store:"
+            )
+            recommended_ids = matched_pids
+        elif any(g in q for g in ["hi", "hello", "hey", "good morning", "good evening", "howdy", "who are you", "what can you do"]):
+            response_text = "Hello! I am your JPetStore AI Shopping & Care Advisor. I can recommend pets tailored to your home and lifestyle, provide care advice, or help you add companion pets to your cart. Here are popular pets available today:"
+            recommended_ids = ["K9-RT-01", "FL-DSH-01", "FI-FW-01"]
+        elif any(w in q for w in ["ship", "deliver", "courier", "arrival", "fedex", "ups"]):
+            response_text = "We ship live pets via express climate-controlled air transport across the USA. Flat-rate standard shipping is $10.00. Here are popular pets ready for priority delivery:"
+            recommended_ids = ["FI-FW-02", "AV-SB-02", "K9-BD-01"]
+        elif any(w in q for w in ["price", "cost", "cheap", "affordable", "expensive", "how much"]):
+            response_text = "Our catalog features pets for all budgets, ranging from affordable freshwater fish ($5.50) to prized exotic parrots ($193.50). Explore popular pets across price ranges:"
+            recommended_ids = ["FI-FW-02", "AV-SB-02", "K9-BD-01", "AV-CB-01"]
+        elif any(w in q for w in ["food", "diet", "feed", "eat", "nutrition"]):
+            response_text = "Dietary guidelines vary by species: our fish thrive on high-protein pellets, dogs and cats on balanced kibble, birds on fortified seeds, and iguanas on fresh greens. Here are popular pets with straightforward dietary needs:"
+            recommended_ids = ["FI-FW-01", "K9-RT-01", "RP-LI-02"]
         elif "cat" in q or "kitten" in q:
-            response_text = "Cats make wonderful companions! We offer Manx and Persian breeds, known for their affectionate nature."
+            response_text = "Cats make wonderful companions! We offer friendly Manx and luxurious Persian cats in our store:"
             recommended_ids = ["FL-DSH-01", "FL-DLH-02"]
         elif "dog" in q or "puppy" in q:
-            response_text = "Dogs are loyal and protective family pets! We offer Bulldogs, Retrievers, Poodles, and Dalmatians."
-            recommended_ids = ["K9-RT-01", "K9-BD-01", "K9-PO-02"]
+            response_text = "Dogs are loyal and loving family companions! We offer Bulldogs, Retrievers, Poodles, Chihuahuas, and Dalmatians:"
+            recommended_ids = ["K9-RT-01", "K9-BD-01", "K9-PO-02", "K9-CW-01"]
         elif "fish" in q or "aquarium" in q:
-            response_text = "Aquariums are proven stress-relievers. We offer Goldfish, Koi, Angelfish, and Tiger Sharks."
+            response_text = "Aquariums bring natural tranquility to your home. We offer beautiful Goldfish, Koi, Angelfish, and Tiger Sharks:"
             recommended_ids = ["FI-SW-01", "FI-FW-01", "FI-FW-02"]
         elif "bird" in q or "parrot" in q:
-            response_text = "Birds bring vibrant color and melody. Our Amazon Parrots live up to 75 years and can mimic speech."
+            response_text = "Birds bring vibrant song and intelligence. We offer cheerful Finches and talking Amazon Parrots:"
             recommended_ids = ["AV-CB-01", "AV-SB-02"]
         elif "reptile" in q or "snake" in q or "lizard" in q:
-            response_text = "Reptiles are hypoallergenic and fascinating. Our Green Iguanas and Rattlesnakes are popular exotics."
+            response_text = "Reptiles are hypoallergenic and fascinating terrarium companions. We offer Green Iguanas and Rattlesnakes:"
             recommended_ids = ["RP-LI-02", "RP-SN-01"]
         else:
-            response_text = "Welcome to JPetStore AI Advisor! You can search our catalog for pets based on temperament, apartment-living, family-friendly traits, or dietary accessories."
+            response_text = "I'd love to help you find the right pet! You can ask about living spaces (e.g. 'apartment living'), family pets, care routines, or click any of the categories above. Here are top recommended pets from our catalog:"
             recommended_ids = ["FI-SW-01", "K9-RT-01", "FL-DSH-01"]
+
+        # Build grounded product list with real names, descriptions, prices, and SKUs
+        recommended_pets = []
+        for pid in recommended_ids:
+            if pid in CATALOG_PRODUCTS:
+                prod = CATALOG_PRODUCTS[pid]
+                recommended_pets.append({
+                    "product_id": prod["product_id"],
+                    "item_id": prod["item_id"],
+                    "name": prod["name"],
+                    "category": prod["category"],
+                    "price": float(prod["price"]),
+                    "description": prod["description"]
+                })
 
         return {
             "answer": response_text,
-            "suggested_product_ids": recommended_ids
+            "suggested_product_ids": recommended_ids,
+            "recommended_pets": recommended_pets
         }

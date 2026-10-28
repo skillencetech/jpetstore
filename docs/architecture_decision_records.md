@@ -3,9 +3,9 @@
 
 **Status:** Approved & Baselined  
 **Role:** AI Technical Lead  
-**Evaluation Standard:** [ASSESSMENT.pdf](file:///c:/Angappan/SourceCode/TalentGigs/jpetstore-6/ASSESSMENT.pdf)  
-**Parent Roadmap:** [jpetstore_migration_proposal_and_roadmap.md](file:///c:/Angappan/SourceCode/TalentGigs/jpetstore-6/docs/jpetstore_migration_proposal_and_roadmap.md)  
-**Baseline Architecture:** [jpetstore_architecture_decomposition.md](file:///c:/Angappan/SourceCode/TalentGigs/jpetstore-6/docs/jpetstore_architecture_decomposition.md)  
+**Evaluation Standard:** docs/ASSESSMENT.pdf  
+**Parent Roadmap:** docs/jpetstore_migration_proposal_and_roadmap.md  
+**Baseline Architecture:** docs/jpetstore_architecture_decomposition.md  
 
 ---
 
@@ -28,7 +28,7 @@
 **Accepted**
 
 ### Context
-Legacy JPetStore 6 runs on Java 11/17 inside a Tomcat Servlet container using Spring MVC 5.3 ([spring-mvc.xml](file:///c:/Angappan/SourceCode/TalentGigs/jpetstore-6/src/main/webapp/WEB-INF/spring-mvc.xml)). We need a modern Python web framework that supports high-throughput asynchronous execution, dual-mode serving (server-rendered HTML templates for UI continuity alongside auto-documented REST APIs for AI agents), and production maintainability.
+Legacy JPetStore 6 runs on Java 11/17 inside a Tomcat Servlet container using Spring MVC 5.3 (app/WEB-INF/spring-mvc.xml). We need a modern Python web framework that supports high-throughput asynchronous execution, dual-mode serving (server-rendered HTML templates for UI continuity alongside auto-documented REST APIs for AI agents), and production maintainability.
 
 ### Options Considered
 1. **Django:** Highly mature "batteries-included" framework, but heavily opinionated, synchronous by default, tightly coupled ORM, and excessive boilerplate overhead for an e-commerce API.
@@ -54,7 +54,7 @@ Adopt **FastAPI** running on the **Uvicorn** ASGI web server.
 **Accepted**
 
 ### Context
-The legacy UI consists of JSP 2.3 templates using JSTL tags ([src/main/webapp/WEB-INF/jsp/](file:///c:/Angappan/SourceCode/TalentGigs/jpetstore-6/src/main/webapp/WEB-INF/jsp/)), 38 static GIF assets ([src/main/webapp/images/](file:///c:/Angappan/SourceCode/TalentGigs/jpetstore-6/src/main/webapp/images/)), and custom styling ([jpetstore.css](file:///c:/Angappan/SourceCode/TalentGigs/jpetstore-6/src/main/webapp/css/jpetstore.css)). The assessment requires retaining intended business behavior and demonstrating a functional application live.
+The legacy UI consists of JSP 2.3 templates using JSTL tags (app/WEB-INF/jsp/), 38 static GIF assets (app/static/images/), and custom styling (app/static/css/jpetstore.css). The assessment requires retaining intended business behavior and demonstrating a functional application live.
 
 ### Options Considered
 1. **Full Frontend Rewrite as a Single Page App (React / Vue / Next.js):** Decouples frontend and backend, but introduces massive token consumption, complex client-side state synchronization for checkout, and high risk of visual regressions.
@@ -80,7 +80,7 @@ Adopt **Option 2: Direct Jinja2 Template Port**.
 **Accepted**
 
 ### Context
-Legacy JPetStore uses MyBatis 3 XML mappers ([org/mybatis/jpetstore/mapper/](file:///c:/Angappan/SourceCode/TalentGigs/jpetstore-6/src/main/resources/org/mybatis/jpetstore/mapper/)) which decouples SQL queries from domain POJOs. We need a mature, battle-tested Python persistence layer that maintains strict 3-tier architecture (`Repository` layer) and handles transactional integrity during order placement.
+Legacy JPetStore uses MyBatis 3 XML mappers (src/main/resources/org/mybatis/jpetstore/mapper/) which decouples SQL queries from domain POJOs. We need a mature, battle-tested Python persistence layer that maintains strict 3-tier architecture (`Repository` layer) and handles transactional integrity during order placement.
 
 ### Options Considered
 1. **SQLModel:** Blends SQLAlchemy 2.0 with Pydantic v2 into unified classes. Great for rapid prototyping, but complex queries and advanced transactional row-locking defer to raw SQLAlchemy underneath.
@@ -208,7 +208,7 @@ Directly embed three native AI capabilities into the architecture:
 **Accepted**
 
 ### Context
-Legacy JPetStore relies on an embedded in-memory HSQLDB database initialized on startup via [jpetstore-hsqldb-schema.sql](file:///c:/Angappan/SourceCode/TalentGigs/jpetstore-6/src/main/resources/database/jpetstore-hsqldb-schema.sql) and [jpetstore-hsqldb-dataload.sql](file:///c:/Angappan/SourceCode/TalentGigs/jpetstore-6/src/main/resources/database/jpetstore-hsqldb-dataload.sql).
+Legacy JPetStore relies on an embedded in-memory HSQLDB database initialized on startup via src/main/resources/database/jpetstore-hsqldb-schema.sql and src/main/resources/database/jpetstore-hsqldb-dataload.sql.
 
 ### Options Considered
 1. **HSQLDB via Java Bridge:** Fragile and defeats Python modernization.

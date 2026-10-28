@@ -8,6 +8,8 @@ from app.repositories.account_repository import AccountRepository
 from app.repositories.catalog_repository import CatalogRepository
 from app.services.account_service import AccountService
 from app.services.catalog_service import CatalogService
+from app.dependencies.auth import get_current_active_user
+from app.models.account import Account
 
 router = APIRouter()
 from app.templates_config import templates
@@ -38,12 +40,16 @@ async def signon(
             name="account/signon.html",
             context={"error": "Invalid username or password.", "username": username}
         )
+    cart_data = request.session.get("cart")
+    request.session.clear()
+    if cart_data:
+        request.session["cart"] = cart_data
     request.session["user"] = await service.populate_user_session(account)
     return RedirectResponse(url="/catalog", status_code=303)
 
 @router.get("/account/signoff")
 async def signoff(request: Request):
-    request.session.pop("user", None)
+    request.session.clear()
     return RedirectResponse(url="/catalog", status_code=303)
 
 @router.get("/account/newAccountForm", response_class=HTMLResponse)
@@ -122,14 +128,10 @@ async def new_account(
 
 @router.get("/account/editAccountForm", response_class=HTMLResponse)
 @router.get("/account/profile", response_class=HTMLResponse)
-async def edit_account_form(request: Request, db: AsyncSession = Depends(get_db)):
-    user = request.session.get("user")
-    if not user:
-        return RedirectResponse(url="/account/signonForm", status_code=303)
-
-    service = AccountService(AccountRepository(db))
-    account = await service.get_account(user["userid"])
-
+async def edit_account_form(
+    request: Request,
+    account: Account = Depends(get_current_active_user)
+):
     return templates.TemplateResponse(
         request=request,
         name="account/edit_account.html",
@@ -137,7 +139,7 @@ async def edit_account_form(request: Request, db: AsyncSession = Depends(get_db)
             "account": account,
             "languages": LANGUAGES,
             "categories": CATEGORIES,
-            "user": user
+            "user": request.session.get("user")
         }
     )
 
@@ -160,24 +162,19 @@ async def edit_account(
     favouriteCategoryId: str = Form("DOGS"),
     listOption: bool = Form(False),
     bannerOption: bool = Form(False),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
+    current_user: Account = Depends(get_current_active_user)
 ):
-    user = request.session.get("user")
-    if not user:
-        return RedirectResponse(url="/account/signonForm", status_code=303)
-
     if password and password != repeatedPassword:
-        service = AccountService(AccountRepository(db))
-        account = await service.get_account(user["userid"])
         return templates.TemplateResponse(
             request=request,
             name="account/edit_account.html",
             context={
-                "account": account,
+                "account": current_user,
                 "languages": LANGUAGES,
                 "categories": CATEGORIES,
                 "error": "Passwords do not match.",
-                "user": user
+                "user": request.session.get("user")
             }
         )
 
@@ -193,10 +190,10 @@ async def edit_account(
         "listOption": listOption,
         "bannerOption": bannerOption
     }
-    account = await service.update_account_profile(user["userid"], password, account_info, profile_info)
+    account = await service.update_account_profile(current_user.username, password, account_info, profile_info)
     await db.commit()
 
-    account_with_profile = await service.get_account(user["userid"])
+    account_with_profile = await service.get_account(current_user.username)
     request.session["user"] = await service.populate_user_session(account_with_profile or account)
 
     return RedirectResponse(url="/catalog", status_code=303)

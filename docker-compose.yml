@@ -1,0 +1,30 @@
+version: "3.8"
+
+services:
+  jpetstore-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: jpetstore-ai-native:latest
+    container_name: jpetstore-ai-instance
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - APP_NAME=JPetStore AI-Native (Production Cluster)
+      - DEBUG=False
+      - SECRET_KEY=production-secure-cryptographic-key-change-in-prod-2026
+      - DATABASE_URL=sqlite+aiosqlite:///jpetstore.db
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          cpus: "2.0"
+          memory: 1024M
+        reservations:
+          cpus: "0.5"
+          memory: 256M

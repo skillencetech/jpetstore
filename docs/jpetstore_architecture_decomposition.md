@@ -1,7 +1,7 @@
 # JPetStore 6: Application Architecture Decomposition Document
 
 ## 1. Executive Summary & Assessment Context
-This document establishes the formal architectural decomposition of the **MyBatis JPetStore 6** application to serve as the baseline specification for modernizing the system into an AI-native Python-based application, in accordance with the evaluation requirements in [ASSESSMENT.pdf](file:///c:/Angappan/SourceCode/TalentGigs/jpetstore-6/ASSESSMENT.pdf).
+This document establishes the formal architectural decomposition of the **MyBatis JPetStore 6** application to serve as the baseline specification for modernizing the system into an AI-native Python-based application, in accordance with the evaluation requirements in docs/ASSESSMENT.pdf.
 
 JPetStore is an e-commerce reference application modeling an online pet store. Its core capabilities include:
 * Hierarchical product catalog browsing (Categories -> Products -> Items) and full-text keyword search.
@@ -15,13 +15,13 @@ JPetStore is an e-commerce reference application modeling an online pet store. I
 
 | Layer | Legacy Implementation | Configuration / Source Files |
 | :--- | :--- | :--- |
-| **Runtime & Platform** | Java 11 / Java 17, Servlet 4.0 / Tomcat 9 | [pom.xml](file:///c:/Angappan/SourceCode/TalentGigs/jpetstore-6/pom.xml), [Dockerfile](file:///c:/Angappan/SourceCode/TalentGigs/jpetstore-6/Dockerfile) |
-| **Dependency Injection & Tx** | Spring Framework 5.3 (`spring-webmvc`, `spring-jdbc`, `spring-tx`) | [applicationContext.xml](file:///c:/Angappan/SourceCode/TalentGigs/jpetstore-6/src/main/webapp/WEB-INF/applicationContext.xml) |
-| **Web MVC Framework** | Spring MVC (`DispatcherServlet`, `@Controller`, `@GetMapping`, `@PostMapping`) | [spring-mvc.xml](file:///c:/Angappan/SourceCode/TalentGigs/jpetstore-6/src/main/webapp/WEB-INF/spring-mvc.xml), [web.xml](file:///c:/Angappan/SourceCode/TalentGigs/jpetstore-6/src/main/webapp/WEB-INF/web.xml) |
-| **Persistence / ORM** | MyBatis 3 (`mybatis-spring`) with XML Mapper definitions | [org/mybatis/jpetstore/mapper/](file:///c:/Angappan/SourceCode/TalentGigs/jpetstore-6/src/main/resources/org/mybatis/jpetstore/mapper/) |
-| **Database Engine** | HSQLDB 2.7 (Embedded In-Memory Relational Engine) | [jpetstore-hsqldb-schema.sql](file:///c:/Angappan/SourceCode/TalentGigs/jpetstore-6/src/main/resources/database/jpetstore-hsqldb-schema.sql) |
-| **View / Presentation** | JSP 2.3 + JSTL (`c:`, `fmt:`) + Custom CSS | [src/main/webapp/WEB-INF/jsp/](file:///c:/Angappan/SourceCode/TalentGigs/jpetstore-6/src/main/webapp/WEB-INF/jsp/), [jpetstore.css](file:///c:/Angappan/SourceCode/TalentGigs/jpetstore-6/src/main/webapp/css/jpetstore.css) |
-| **Session Management** | Servlet `HttpSession` (in-memory state for Cart and Account) | [AccountController.java](file:///c:/Angappan/SourceCode/TalentGigs/jpetstore-6/src/main/java/org/mybatis/jpetstore/web/controllers/AccountController.java), [CartController.java](file:///c:/Angappan/SourceCode/TalentGigs/jpetstore-6/src/main/java/org/mybatis/jpetstore/web/controllers/CartController.java) |
+| **Runtime & Platform** | Java 11 / Java 17, Servlet 4.0 / Tomcat 9 | pom.xml, Dockerfile |
+| **Dependency Injection & Tx** | Spring Framework 5.3 (`spring-webmvc`, `spring-jdbc`, `spring-tx`) | app/WEB-INF/applicationContext.xml |
+| **Web MVC Framework** | Spring MVC (`DispatcherServlet`, `@Controller`, `@GetMapping`, `@PostMapping`) | app/WEB-INF/spring-mvc.xml, app/WEB-INF/web.xml |
+| **Persistence / ORM** | MyBatis 3 (`mybatis-spring`) with XML Mapper definitions | src/main/resources/org/mybatis/jpetstore/mapper/ |
+| **Database Engine** | HSQLDB 2.7 (Embedded In-Memory Relational Engine) | src/main/resources/database/jpetstore-hsqldb-schema.sql |
+| **View / Presentation** | JSP 2.3 + JSTL (`c:`, `fmt:`) + Custom CSS | app/WEB-INF/jsp/, app/static/css/jpetstore.css |
+| **Session Management** | Servlet `HttpSession` (in-memory state for Cart and Account) | src/main/java/org/mybatis/jpetstore/web/controllers/AccountController.java, src/main/java/org/mybatis/jpetstore/web/controllers/CartController.java |
 
 ---
 
@@ -90,23 +90,23 @@ graph TD
 
 | Component | Responsibility | Endpoints & Methods | Dependencies |
 | :--- | :--- | :--- | :--- |
-| [RootController](file:///c:/Angappan/SourceCode/TalentGigs/jpetstore-6/src/main/java/org/mybatis/jpetstore/web/controllers/RootController.java) | Entrypoint router | `GET /` ➔ Redirects to `/catalog` | None |
-| [CatalogController](file:///c:/Angappan/SourceCode/TalentGigs/jpetstore-6/src/main/java/org/mybatis/jpetstore/web/controllers/CatalogController.java) | Catalog browsing & search | `GET /catalog` (Main Menu)<br/>`GET /catalog/categories/{categoryId}`<br/>`GET /catalog/products/{productId}`<br/>`GET /catalog/items/{itemId}`<br/>`POST /catalog/search` | [CatalogService](file:///c:/Angappan/SourceCode/TalentGigs/jpetstore-6/src/main/java/org/mybatis/jpetstore/service/CatalogService.java) |
-| [CartController](file:///c:/Angappan/SourceCode/TalentGigs/jpetstore-6/src/main/java/org/mybatis/jpetstore/web/controllers/CartController.java) | In-memory shopping cart operations | `GET /cart` (View cart)<br/>`GET /cart/addItem?workingItemId={id}`<br/>`GET /cart/removeItem?workingItemId={id}`<br/>`POST /cart/update` (Bulk quantity updates) | [CatalogService](file:///c:/Angappan/SourceCode/TalentGigs/jpetstore-6/src/main/java/org/mybatis/jpetstore/service/CatalogService.java), `HttpSession` |
-| [AccountController](file:///c:/Angappan/SourceCode/TalentGigs/jpetstore-6/src/main/java/org/mybatis/jpetstore/web/controllers/AccountController.java) | User lifecycle, auth, and preferences | `GET/POST /account` (Sign-in form & submit)<br/>`GET /account/signoff`<br/>`GET/POST /account/new` (Registration form & submit)<br/>`GET/POST /account/edit` (Profile update form & submit) | [AccountService](file:///c:/Angappan/SourceCode/TalentGigs/jpetstore-6/src/main/java/org/mybatis/jpetstore/service/AccountService.java), [CatalogService](file:///c:/Angappan/SourceCode/TalentGigs/jpetstore-6/src/main/java/org/mybatis/jpetstore/service/CatalogService.java), `HttpSession` |
-| [OrderController](file:///c:/Angappan/SourceCode/TalentGigs/jpetstore-6/src/main/java/org/mybatis/jpetstore/web/controllers/OrderController.java) | Checkout wizard & order history | `GET /order/list` (Historical orders)<br/>`GET /order/new` (Initialize checkout from cart)<br/>`POST /order/new` (Submit payment/billing info)<br/>`POST /order/shipping` (Submit custom shipping address)<br/>`GET/POST /order/confirm` (Final review & execution)<br/>`GET /order/view?orderId={id}` | [OrderService](file:///c:/Angappan/SourceCode/TalentGigs/jpetstore-6/src/main/java/org/mybatis/jpetstore/service/OrderService.java), `HttpSession` |
+| src/main/java/org/mybatis/jpetstore/web/controllers/RootController.java | Entrypoint router | `GET /` ➔ Redirects to `/catalog` | None |
+| src/main/java/org/mybatis/jpetstore/web/controllers/CatalogController.java | Catalog browsing & search | `GET /catalog` (Main Menu)<br/>`GET /catalog/categories/{categoryId}`<br/>`GET /catalog/products/{productId}`<br/>`GET /catalog/items/{itemId}`<br/>`POST /catalog/search` | src/main/java/org/mybatis/jpetstore/service/CatalogService.java |
+| src/main/java/org/mybatis/jpetstore/web/controllers/CartController.java | In-memory shopping cart operations | `GET /cart` (View cart)<br/>`GET /cart/addItem?workingItemId={id}`<br/>`GET /cart/removeItem?workingItemId={id}`<br/>`POST /cart/update` (Bulk quantity updates) | src/main/java/org/mybatis/jpetstore/service/CatalogService.java, `HttpSession` |
+| src/main/java/org/mybatis/jpetstore/web/controllers/AccountController.java | User lifecycle, auth, and preferences | `GET/POST /account` (Sign-in form & submit)<br/>`GET /account/signoff`<br/>`GET/POST /account/new` (Registration form & submit)<br/>`GET/POST /account/edit` (Profile update form & submit) | src/main/java/org/mybatis/jpetstore/service/AccountService.java, src/main/java/org/mybatis/jpetstore/service/CatalogService.java, `HttpSession` |
+| src/main/java/org/mybatis/jpetstore/web/controllers/OrderController.java | Checkout wizard & order history | `GET /order/list` (Historical orders)<br/>`GET /order/new` (Initialize checkout from cart)<br/>`POST /order/new` (Submit payment/billing info)<br/>`POST /order/shipping` (Submit custom shipping address)<br/>`GET/POST /order/confirm` (Final review & execution)<br/>`GET /order/view?orderId={id}` | src/main/java/org/mybatis/jpetstore/service/OrderService.java, `HttpSession` |
 
 ---
 
 ### 4.2. Business Service Layer (`org.mybatis.jpetstore.service`)
 
-#### [AccountService](file:///c:/Angappan/SourceCode/TalentGigs/jpetstore-6/src/main/java/org/mybatis/jpetstore/service/AccountService.java)
+#### src/main/java/org/mybatis/jpetstore/service/AccountService.java
 * **`getAccount(String username)`**: Retrieves consolidated account, profile, and banner preferences for a user.
 * **`getAccount(String username, String password)`**: Validates credentials against `signon` table.
 * **`insertAccount(Account account)`** (`@Transactional`): Writes to 3 tables: `account`, `profile`, and `signon`.
 * **`updateAccount(Account account)`** (`@Transactional`): Updates `account` demographics, `profile` preferences, and optionally updates password in `signon` if a non-empty string is provided.
 
-#### [CatalogService](file:///c:/Angappan/SourceCode/TalentGigs/jpetstore-6/src/main/java/org/mybatis/jpetstore/service/CatalogService.java)
+#### src/main/java/org/mybatis/jpetstore/service/CatalogService.java
 * **`getCategoryList()`**: Returns all active categories (`FISH`, `DOGS`, `REPTILES`, `CATS`, `BIRDS`).
 * **`getCategory(String categoryId)`**: Returns category metadata.
 * **`getProductListByCategory(String categoryId)`**: Retrieves all products linked to a category.
@@ -116,7 +116,7 @@ graph TD
 * **`getItem(String itemId)`**: Retrieves SKU details along with supplier metadata and current inventory quantity.
 * **`isItemInStock(String itemId)`**: Queries `inventory.qty > 0`.
 
-#### [OrderService](file:///c:/Angappan/SourceCode/TalentGigs/jpetstore-6/src/main/java/org/mybatis/jpetstore/service/OrderService.java)
+#### src/main/java/org/mybatis/jpetstore/service/OrderService.java
 * **`insertOrder(Order order)`** (`@Transactional`):
   1. Calls `getNextId("ordernum")` to fetch and increment sequence atomically.
   2. For every line item, runs `itemMapper.updateInventoryQuantity({itemId, increment})` decrementing stock (`qty = qty - increment`).
@@ -133,13 +133,13 @@ graph TD
 
 | Mapper Interface | XML Descriptor | Operations |
 | :--- | :--- | :--- |
-| [AccountMapper](file:///c:/Angappan/SourceCode/TalentGigs/jpetstore-6/src/main/java/org/mybatis/jpetstore/mapper/AccountMapper.java) | [AccountMapper.xml](file:///c:/Angappan/SourceCode/TalentGigs/jpetstore-6/src/main/resources/org/mybatis/jpetstore/mapper/AccountMapper.xml) | `getAccountByUsername`, `getAccountByUsernameAndPassword`, `insertAccount`, `insertProfile`, `insertSignon`, `updateAccount`, `updateProfile`, `updateSignon` |
-| [CategoryMapper](file:///c:/Angappan/SourceCode/TalentGigs/jpetstore-6/src/main/java/org/mybatis/jpetstore/mapper/CategoryMapper.java) | [CategoryMapper.xml](file:///c:/Angappan/SourceCode/TalentGigs/jpetstore-6/src/main/resources/org/mybatis/jpetstore/mapper/CategoryMapper.xml) | `getCategoryList`, `getCategory` |
-| [ProductMapper](file:///c:/Angappan/SourceCode/TalentGigs/jpetstore-6/src/main/java/org/mybatis/jpetstore/mapper/ProductMapper.java) | [ProductMapper.xml](file:///c:/Angappan/SourceCode/TalentGigs/jpetstore-6/src/main/resources/org/mybatis/jpetstore/mapper/ProductMapper.xml) | `getProductListByCategory`, `getProduct`, `searchProductList` |
-| [ItemMapper](file:///c:/Angappan/SourceCode/TalentGigs/jpetstore-6/src/main/java/org/mybatis/jpetstore/mapper/ItemMapper.java) | [ItemMapper.xml](file:///c:/Angappan/SourceCode/TalentGigs/jpetstore-6/src/main/resources/org/mybatis/jpetstore/mapper/ItemMapper.xml) | `getItemListByProduct`, `getItem`, `getInventoryQuantity`, `updateInventoryQuantity` |
-| [OrderMapper](file:///c:/Angappan/SourceCode/TalentGigs/jpetstore-6/src/main/java/org/mybatis/jpetstore/mapper/OrderMapper.java) | [OrderMapper.xml](file:///c:/Angappan/SourceCode/TalentGigs/jpetstore-6/src/main/resources/org/mybatis/jpetstore/mapper/OrderMapper.xml) | `getOrder`, `getOrdersByUsername`, `insertOrder`, `insertOrderStatus` |
-| [LineItemMapper](file:///c:/Angappan/SourceCode/TalentGigs/jpetstore-6/src/main/java/org/mybatis/jpetstore/mapper/LineItemMapper.java) | [LineItemMapper.xml](file:///c:/Angappan/SourceCode/TalentGigs/jpetstore-6/src/main/resources/org/mybatis/jpetstore/mapper/LineItemMapper.xml) | `getLineItemsByOrderId`, `insertLineItem` |
-| [SequenceMapper](file:///c:/Angappan/SourceCode/TalentGigs/jpetstore-6/src/main/java/org/mybatis/jpetstore/mapper/SequenceMapper.java) | [SequenceMapper.xml](file:///c:/Angappan/SourceCode/TalentGigs/jpetstore-6/src/main/resources/org/mybatis/jpetstore/mapper/SequenceMapper.xml) | `getSequence`, `updateSequence` |
+| src/main/java/org/mybatis/jpetstore/mapper/AccountMapper.java | src/main/resources/org/mybatis/jpetstore/mapper/AccountMapper.xml | `getAccountByUsername`, `getAccountByUsernameAndPassword`, `insertAccount`, `insertProfile`, `insertSignon`, `updateAccount`, `updateProfile`, `updateSignon` |
+| src/main/java/org/mybatis/jpetstore/mapper/CategoryMapper.java | src/main/resources/org/mybatis/jpetstore/mapper/CategoryMapper.xml | `getCategoryList`, `getCategory` |
+| src/main/java/org/mybatis/jpetstore/mapper/ProductMapper.java | src/main/resources/org/mybatis/jpetstore/mapper/ProductMapper.xml | `getProductListByCategory`, `getProduct`, `searchProductList` |
+| src/main/java/org/mybatis/jpetstore/mapper/ItemMapper.java | src/main/resources/org/mybatis/jpetstore/mapper/ItemMapper.xml | `getItemListByProduct`, `getItem`, `getInventoryQuantity`, `updateInventoryQuantity` |
+| src/main/java/org/mybatis/jpetstore/mapper/OrderMapper.java | src/main/resources/org/mybatis/jpetstore/mapper/OrderMapper.xml | `getOrder`, `getOrdersByUsername`, `insertOrder`, `insertOrderStatus` |
+| src/main/java/org/mybatis/jpetstore/mapper/LineItemMapper.java | src/main/resources/org/mybatis/jpetstore/mapper/LineItemMapper.xml | `getLineItemsByOrderId`, `insertLineItem` |
+| src/main/java/org/mybatis/jpetstore/mapper/SequenceMapper.java | src/main/resources/org/mybatis/jpetstore/mapper/SequenceMapper.xml | `getSequence`, `updateSequence` |
 
 ---
 
@@ -235,7 +235,7 @@ erDiagram
 
 ## 6. Business Workflow & State Decomposition
 
-### 6.1. Shopping Cart Lifecycle ([Cart.java](file:///c:/Angappan/SourceCode/TalentGigs/jpetstore-6/src/main/java/org/mybatis/jpetstore/domain/Cart.java))
+### 6.1. Shopping Cart Lifecycle (src/main/java/org/mybatis/jpetstore/domain/Cart.java)
 * **Storage:** Cart lives in the user's session (`session.getAttribute("cart")`). Unauthenticated guests have an active cart.
 * **Data Structure:** Maintained as a `ConcurrentHashMap<String, CartItem>` for $O(1)$ lookups and a synchronized `ArrayList<CartItem>` for ordered rendering.
 * **Subtotal Calculation:** Functional stream reducing line item costs:
@@ -245,7 +245,7 @@ erDiagram
   * `removeItem`: Removes SKU from both hash map and list.
   * `update`: Accepts form post containing key-value pairs of `{itemId: quantity}`. If quantity $< 1$, the item is removed.
 
-### 6.2. Transactional Checkout & Order Lifecycle ([OrderService.java](file:///c:/Angappan/SourceCode/TalentGigs/jpetstore-6/src/main/java/org/mybatis/jpetstore/service/OrderService.java))
+### 6.2. Transactional Checkout & Order Lifecycle (src/main/java/org/mybatis/jpetstore/service/OrderService.java)
 
 ```mermaid
 sequenceDiagram

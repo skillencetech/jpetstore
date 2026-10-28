@@ -118,7 +118,94 @@
             display: block;
             font-size: 12px;
         }
-            #Banner img { vertical-align: middle; max-height: 8ex; }
+        .advisor-item-card {
+            background: #ffffff;
+            border: 1px solid #cce2d3;
+            border-left: 3px solid #005e21;
+            border-radius: 6px;
+            padding: 8px 10px;
+            margin: 8px 0;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+            text-align: left;
+        }
+        .advisor-item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            font-weight: bold;
+            font-size: 13px;
+        }
+        .advisor-item-header a {
+            color: #005e21;
+            text-decoration: none;
+        }
+        .advisor-item-header a:hover {
+            text-decoration: underline;
+        }
+        .advisor-item-price {
+            color: #111;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .advisor-item-desc {
+            font-size: 11px;
+            color: #555;
+            margin: 4px 0 6px 0;
+            line-height: 1.3;
+        }
+        .advisor-add-btn {
+            background-color: #005e21;
+            color: #ffffff;
+            border: none;
+            border-radius: 4px;
+            padding: 5px 12px;
+            font-size: 11px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .advisor-add-btn:hover {
+            background-color: #008730;
+            transform: translateY(-1px);
+        }
+        .cat-pills-bar {
+            display: flex;
+            gap: 6px;
+            overflow-x: auto;
+            padding: 4px 0 8px 0;
+            margin-bottom: 8px;
+            border-bottom: 1px solid #e1e4e8;
+            scrollbar-width: thin;
+        }
+        .cat-pill {
+            padding: 4px 10px;
+            border-radius: 16px;
+            border: 1px solid #cce2d3;
+            background: #f4f6f8;
+            color: #333;
+            font-size: 11px;
+            font-weight: bold;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.2s ease;
+            user-select: none;
+        }
+        .cat-pill:hover {
+            background: #e8f5ec;
+            border-color: #005e21;
+        }
+        .cat-pill.active {
+            background: #005e21;
+            color: #ffffff;
+            border-color: #005e21;
+        }
+        .cat-pill.favorite {
+            border-color: #f39c12;
+        }
+        #Banner img { vertical-align: middle; max-height: 8ex; }
     </style>
 </head>
 <body>
@@ -196,12 +283,13 @@
         </div>
         <div id="AIAdvisorBody">
             <div class="ai-msg">
-                Hello! I am your AI Pet Care Advisor. I can analyze your cart for essential accessories, recommend pets for your lifestyle (e.g. <i>"apartment living"</i>), or answer dietary questions!
+                Hello! I am your AI Pet Care Advisor. Browse your preferred category or explore other categories below!
             </div>
+            <div class="cat-pills-bar" id="AdvisorCategoryPills"></div>
             <div id="AdvisorInsights"></div>
         </div>
         <div id="AIAdvisorFooter">
-            <input type="text" id="AdvisorInput" placeholder="{{ t('Ask about pet care or diet...') }}" onkeypress="if(event.key==='Enter') sendAdvisorQuery()">
+            <input type="text" id="AdvisorInput" placeholder="{{ t('Ask about pet care or lifestyle...') }}" onkeypress="if(event.key==='Enter') sendAdvisorQuery()">
             <button onclick="sendAdvisorQuery()">{{ t("Ask") }}</button>
         </div>
     </div>
@@ -217,18 +305,67 @@
             }
         }
 
-        async function fetchCartInsights() {
+        const ALL_CATEGORIES = [
+            { id: "DOGS", label: "🐶 Dogs" },
+            { id: "CATS", label: "🐱 Cats" },
+            { id: "FISH", label: "🐠 Fish" },
+            { id: "REPTILES", label: "🦎 Reptiles" },
+            { id: "BIRDS", label: "🦜 Birds" }
+        ];
+
+        function renderCategoryPills(activeCat, favCat) {
+            const container = document.getElementById("AdvisorCategoryPills");
+            if (!container) return;
+            let html = "";
+            ALL_CATEGORIES.forEach(c => {
+                const isActive = (c.id === (activeCat || "").toUpperCase());
+                const isFav = (c.id === (favCat || "").toUpperCase());
+                let classes = "cat-pill" + (isActive ? " active" : "") + (isFav ? " favorite" : "");
+                let label = c.label + (isFav ? " ★" : "");
+                html += `<span class="${classes}" onclick="switchAdvisorCategory('${c.id}')" title="${isFav ? 'Your Preferred Category' : c.label}">${label}</span>`;
+            });
+            container.innerHTML = html;
+        }
+
+        function switchAdvisorCategory(catId) {
+            fetchCartInsights(catId);
+        }
+
+        async function fetchCartInsights(category) {
             try {
-                const res = await fetch("/advisor/cart_insights");
-                const data = await res.json();
-                const container = document.getElementById("AdvisorInsights");
-                if (data.recommended_accessories && data.recommended_accessories.length > 0) {
-                    let html = "<div style=\"margin-top:8px; font-weight:bold; color:#005e21;\">🛒 Recommended for Your Cart:</div>";
-                    data.recommended_accessories.forEach(item => {
-                        html += "<div class=\"acc-chip\"><b>" + item.name + "</b> ($" + item.price.toFixed(2) + ")<br><small style=\"color:#555;\">" + item.tip + "</small></div>";
-                    });
-                    container.innerHTML = html;
+                let url = "/advisor/cart_insights";
+                if (category) {
+                    url += "?category=" + encodeURIComponent(category);
                 }
+                const res = await fetch(url);
+                const data = await res.json();
+                
+                renderCategoryPills(data.selected_category, data.preferred_category);
+                
+                const container = document.getElementById("AdvisorInsights");
+                let html = "";
+                if (data.preferred_category && data.selected_category === data.preferred_category) {
+                    html += `<div style="font-size:11px; color:#005e21; font-weight:bold; margin-bottom:6px;">★ Showing your Preferred Category: ${data.selected_category}</div>`;
+                } else if (data.selected_category) {
+                    html += `<div style="font-size:11px; color:#555; font-weight:bold; margin-bottom:6px;">Exploring Category: ${data.selected_category}</div>`;
+                }
+                if (data.advice && data.advice.length > 0) {
+                    html += "<div style=\"margin:4px 0 8px 0; font-size:11px; color:#2c3e50; background:#f4f6f8; padding:6px 8px; border-radius:4px;\">💡 " + data.advice.join("<br>💡 ") + "</div>";
+                }
+                if (data.recommended_accessories && data.recommended_accessories.length > 0) {
+                    data.recommended_accessories.forEach(item => {
+                        html += `
+                        <div class="advisor-item-card">
+                            <div class="advisor-item-header">
+                                <a href="/catalog/products/${item.product_id}">${item.name}</a>
+                                <span class="advisor-item-price">$${item.price.toFixed(2)}</span>
+                            </div>
+                            <div class="advisor-item-desc">${item.description || item.tip}</div>
+                            <button class="advisor-add-btn" onclick="advisorAddToCart(this, '${item.item_id}')">🛒 Add to Cart</button>
+                        </div>`;
+                    });
+                }
+                container.innerHTML = html;
             } catch (e) {
                 console.error("Cart insights error:", e);
             }
@@ -240,7 +377,8 @@
             if (!msg) return;
 
             const body = document.getElementById("AIAdvisorBody");
-            body.innerHTML += "<div class=\"user-msg\">" + msg + "</div>";
+            const safeMsg = msg.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+            body.innerHTML += "<div class=\"user-msg\">" + safeMsg + "</div>";
             input.value = "";
 
             try {
@@ -249,11 +387,62 @@
                     headers: {"Content-Type": "application/json"},
                     body: JSON.stringify({message: msg})
                 });
-                const data = await res.json();
-                body.innerHTML += "<div class=\"ai-msg\">" + data.answer + "</div>";
+                let data = null;
+                if (res.ok) {
+                    data = await res.json();
+                } else {
+                    data = {
+                        answer: "I'd love to help you find the right pet! Feel free to ask about living spaces (e.g. 'apartment'), family pets, care routines, or click any of the categories above.",
+                        recommended_pets: []
+                    };
+                }
+                let html = "<div class=\"ai-msg\">" + (data.answer || "Here are recommendations from our catalog:");
+                if (data.recommended_pets && data.recommended_pets.length > 0) {
+                    html += "<div style=\"margin-top:8px; font-weight:bold; color:#005e21; font-size:12px;\">🐾 Recommended Pets:</div>";
+                    data.recommended_pets.forEach(p => {
+                        const priceStr = (typeof p.price === 'number') ? p.price.toFixed(2) : parseFloat(p.price || 0).toFixed(2);
+                        html += `
+                        <div class="advisor-item-card">
+                            <div class="advisor-item-header">
+                                <a href="/catalog/products/${p.product_id}">${p.name}</a>
+                                <span class="advisor-item-price">$${priceStr}</span>
+                            </div>
+                            <div class="advisor-item-desc">${p.description || ''}</div>
+                            <button class="advisor-add-btn" onclick="advisorAddToCart(this, '${p.item_id}')">🛒 Add to Cart</button>
+                        </div>`;
+                    });
+                }
+                html += "</div>";
+                body.innerHTML += html;
                 body.scrollTop = body.scrollHeight;
             } catch (e) {
-                body.innerHTML += "<div class=\"ai-msg\" style=\"color:red;\">Unable to contact Advisor service.</div>";
+                body.innerHTML += `
+                <div class="ai-msg">
+                    I'm here to help! You can ask about our pet breeds, care tips, or click any of the category pills above to explore pets in our catalog.
+                </div>`;
+                body.scrollTop = body.scrollHeight;
+            }
+        }
+
+        async function advisorAddToCart(btn, itemId) {
+            btn.disabled = true;
+            const originalText = btn.innerHTML;
+            btn.innerText = "Adding...";
+            try {
+                const formData = new FormData();
+                await fetch("/cart/items/" + itemId, {
+                    method: "POST",
+                    body: formData
+                });
+                btn.innerText = "✓ Added to Cart!";
+                btn.style.backgroundColor = "#28a745";
+                setTimeout(() => {
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
+                    btn.style.backgroundColor = "";
+                }, 2000);
+            } catch (e) {
+                window.location.href = "/cart";
             }
         }
     </script>

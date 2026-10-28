@@ -17,3 +17,13 @@ async def test_catalog_service():
         item = await service.get_item("EST-1")
         assert item is not None
         assert item.productid == "FI-SW-01"
+
+        # Search test
+        search_res = await service.search_product_list("Angelfish")
+        assert len(search_res) > 0
+        assert search_res[0].name == "Angelfish"
+
+        # Inventory stock check
+        in_stock = await service.is_item_in_stock("EST-1")
+        assert isinstance(in_stock, bool)
+

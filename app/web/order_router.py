@@ -12,6 +12,8 @@ from app.services.catalog_service import CatalogService
 from app.services.order_service import OrderService, OutOfStockException
 from app.services.account_service import AccountService
 from app.services.cart_service import CartService, CartItem
+from app.dependencies.auth import get_current_active_user
+from app.models.account import Account
 
 router = APIRouter()
 from app.templates_config import templates
@@ -19,25 +21,21 @@ from app.templates_config import templates
 CREDIT_CARD_TYPES = ["Visa", "MasterCard", "American Express"]
 
 @router.get("/order/newOrderForm", response_class=HTMLResponse)
-async def new_order_form(request: Request, db: AsyncSession = Depends(get_db)):
-    user = request.session.get("user")
-    if not user:
-        return RedirectResponse(url="/account/signonForm", status_code=303)
-
+async def new_order_form(
+    request: Request,
+    current_user: Account = Depends(get_current_active_user)
+):
     cart_data = CartService.get_cart_data(request.session)
     if not cart_data:
         return RedirectResponse(url="/cart", status_code=303)
-
-    account_service = AccountService(AccountRepository(db))
-    account = await account_service.get_account(user["userid"])
 
     return templates.TemplateResponse(
         request=request,
         name="order/new_order_form.html",
         context={
-            "account": account,
+            "account": current_user,
             "creditCardTypes": CREDIT_CARD_TYPES,
-            "user": user
+            "user": request.session.get("user")
         }
     )
 
@@ -55,12 +53,9 @@ async def process_new_order(
     billState: str = Form(...),
     billZip: str = Form(...),
     billCountry: str = Form(...),
-    shippingAddressRequired: bool = Form(False)
+    shippingAddressRequired: bool = Form(False),
+    current_user: Account = Depends(get_current_active_user)
 ):
-    user = request.session.get("user")
-    if not user:
-        return RedirectResponse(url="/account/signonForm", status_code=303)
-
     pending_order = {
         "cardType": cardType,
         "creditCard": creditCard,
@@ -91,16 +86,18 @@ async def process_new_order(
     return RedirectResponse(url="/order/confirmOrder", status_code=303)
 
 @router.get("/order/shippingForm", response_class=HTMLResponse)
-async def shipping_form(request: Request):
-    user = request.session.get("user")
+async def shipping_form(
+    request: Request,
+    current_user: Account = Depends(get_current_active_user)
+):
     pending_order = request.session.get("pending_order")
-    if not user or not pending_order:
+    if not pending_order:
         return RedirectResponse(url="/order/newOrderForm", status_code=303)
 
     return templates.TemplateResponse(
         request=request,
         name="order/shipping_form.html",
-        context={"order": pending_order, "user": user}
+        context={"order": pending_order, "user": request.session.get("user")}
     )
 
 @router.post("/order/shipping")
@@ -129,10 +126,13 @@ async def process_shipping(
     return RedirectResponse(url="/order/confirmOrder", status_code=303)
 
 @router.get("/order/confirmOrder", response_class=HTMLResponse)
-async def confirm_order(request: Request, db: AsyncSession = Depends(get_db)):
-    user = request.session.get("user")
+async def confirm_order(
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    current_user: Account = Depends(get_current_active_user)
+):
     pending_order = request.session.get("pending_order")
-    if not user or not pending_order:
+    if not pending_order:
         return RedirectResponse(url="/order/newOrderForm", status_code=303)
 
     cart_data = CartService.get_cart_data(request.session)
@@ -151,15 +151,18 @@ async def confirm_order(request: Request, db: AsyncSession = Depends(get_db)):
             "order": pending_order,
             "cart_items": cart_items,
             "subtotal": subtotal,
-            "user": user
+            "user": request.session.get("user")
         }
     )
 
 @router.post("/order/confirm")
-async def submit_order(request: Request, db: AsyncSession = Depends(get_db)):
-    user = request.session.get("user")
+async def submit_order(
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    current_user: Account = Depends(get_current_active_user)
+):
     pending_order = request.session.get("pending_order")
-    if not user or not pending_order:
+    if not pending_order:
         return RedirectResponse(url="/catalog", status_code=303)
 
     cart_data = CartService.get_cart_data(request.session)
@@ -193,7 +196,7 @@ async def submit_order(request: Request, db: AsyncSession = Depends(get_db)):
             "country": pending_order["shipCountry"],
         }
         order = await order_service.create_order(
-            userid=user["userid"],
+            userid=current_user.username,
             cart_items=cart_items,
             bill_info=bill_info,
             ship_info=ship_info,
@@ -225,18 +228,19 @@ async def submit_order(request: Request, db: AsyncSession = Depends(get_db)):
         )
 
 @router.get("/order/viewOrder/{order_id}", response_class=HTMLResponse)
-async def view_order(request: Request, order_id: int, db: AsyncSession = Depends(get_db)):
-    user = request.session.get("user")
-    if not user:
-        return RedirectResponse(url="/account/signonForm", status_code=303)
-
+async def view_order(
+    request: Request,
+    order_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: Account = Depends(get_current_active_user)
+):
     order_service = OrderService(OrderRepository(db))
     order = await order_service.get_order(order_id)
     if not order:
         return RedirectResponse(url="/order/list", status_code=303)
 
     # Strict authorization: User can only view their own transactional order details
-    if order.userid != user["userid"]:
+    if order.userid != current_user.username:
         raise HTTPException(
             status_code=403,
             detail="Access Denied: You do not have authorization to view transactional details for this order."
@@ -245,32 +249,32 @@ async def view_order(request: Request, order_id: int, db: AsyncSession = Depends
     return templates.TemplateResponse(
         request=request,
         name="order/view_order.html",
-        context={"order": order, "user": user}
+        context={"order": order, "user": request.session.get("user")}
     )
 
 @router.get("/order/list", response_class=HTMLResponse)
-async def list_orders(request: Request, db: AsyncSession = Depends(get_db)):
-    user = request.session.get("user")
-    if not user:
-        return RedirectResponse(url="/account/signonForm", status_code=303)
-
+async def list_orders(
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    current_user: Account = Depends(get_current_active_user)
+):
     order_service = OrderService(OrderRepository(db))
-    orders = await order_service.get_orders_by_username(user["userid"])
+    orders = await order_service.get_orders_by_username(current_user.username)
 
     return templates.TemplateResponse(
         request=request,
         name="order/list_orders.html",
-        context={"orders": orders, "user": user}
+        context={"orders": orders, "user": request.session.get("user")}
     )
 
 # Hardened Transactional REST API Endpoints
 @router.get("/api/v1/orders", summary="Get Authenticated User Order History")
-async def api_get_orders(request: Request, db: AsyncSession = Depends(get_db)):
-    user = request.session.get("user")
-    if not user:
-        raise HTTPException(status_code=401, detail="Authentication required to access order history.")
+async def api_get_orders(
+    db: AsyncSession = Depends(get_db),
+    current_user: Account = Depends(get_current_active_user)
+):
     order_service = OrderService(OrderRepository(db))
-    orders = await order_service.get_orders_by_username(user["userid"])
+    orders = await order_service.get_orders_by_username(current_user.username)
     return [
         {
             "order_id": o.orderid,
@@ -282,15 +286,16 @@ async def api_get_orders(request: Request, db: AsyncSession = Depends(get_db)):
     ]
 
 @router.get("/api/v1/orders/{order_id}", summary="Get Hardened Order Transaction Details")
-async def api_get_order_detail(request: Request, order_id: int, db: AsyncSession = Depends(get_db)):
-    user = request.session.get("user")
-    if not user:
-        raise HTTPException(status_code=401, detail="Authentication required to view order transaction.")
+async def api_get_order_detail(
+    order_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: Account = Depends(get_current_active_user)
+):
     order_service = OrderService(OrderRepository(db))
     order = await order_service.get_order(order_id)
     if not order:
         raise HTTPException(status_code=404, detail="Order not found.")
-    if order.userid != user["userid"]:
+    if order.userid != current_user.username:
         raise HTTPException(status_code=403, detail="Access Denied: You cannot inspect orders belonging to another user.")
     return {
         "order_id": order.orderid,

@@ -79,12 +79,15 @@ async def search_catalog(
         for p in matched
     ]
 
-@router.get("/get_item_details", response_model=ItemToolResponse, summary="Retrieve SKU Specs & Live Inventory")
+@router.get("/item/{item_id}", response_model=ItemToolResponse, summary="Retrieve SKU Specs & Live Inventory")
+@router.get("/get_item_details", response_model=ItemToolResponse, summary="Retrieve SKU Specs & Live Inventory (Query Param)")
 async def get_item_details(
-    item_id: str = Query(..., description="Unique SKU ID (e.g. EST-1, EST-14)"),
+    item_id: str = None,
     db: AsyncSession = Depends(get_db)
 ):
     """Retrieve detailed unit price, variant traits, and real-time stock balance."""
+    if not item_id:
+        raise HTTPException(status_code=400, detail="item_id is required")
     repo = CatalogRepository(db)
     service = CatalogService(repo)
     item = await service.get_item(item_id)
@@ -100,6 +103,19 @@ async def get_item_details(
         in_stock=in_stock,
         inventory_quantity=qty
     )
+
+@router.get("/check_stock/{item_id}", summary="Check Real-Time Stock Balance")
+async def check_stock(item_id: str, db: AsyncSession = Depends(get_db)):
+    """Check inventory stock for a SKU."""
+    repo = CatalogRepository(db)
+    service = CatalogService(repo)
+    item = await service.get_item(item_id)
+    if not item:
+        raise HTTPException(status_code=404, detail=f"SKU '{item_id}' not found")
+    in_stock = await service.is_item_in_stock(item_id)
+    qty = await repo.get_inventory_quantity(item_id)
+    return {"item_id": item_id, "in_stock": in_stock, "quantity": qty}
+
 
 @router.post("/calculate_order_quote", response_model=OrderQuoteResponse, summary="Agent Pre-Purchase Price Quote")
 async def calculate_order_quote(
@@ -142,8 +158,10 @@ async def calculate_order_quote(
         grand_total=float(round(grand_total, 2))
     )
 
+@router.post("/advisor_recommendations", response_model=AdvisorRecommendationResponse, summary="AI Pet Care & Accessory Advisor (Recommendation Endpoint)")
 @router.post("/pet_advisor", response_model=AdvisorRecommendationResponse, summary="AI Pet Care & Accessory Advisor")
 async def get_pet_advisor(req: AdvisorRecommendationInput):
+
     """Returns tailored pet care protocols and complementary accessory recommendations."""
     insights = AIService.get_cart_advisor_insights(req.cart_category_ids)
     return AdvisorRecommendationResponse(
