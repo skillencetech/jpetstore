@@ -10,6 +10,7 @@ from app.web.catalog_router import router as catalog_router
 from app.web.cart_router import router as cart_router
 from app.web.account_router import router as account_router
 from app.web.order_router import router as order_router
+from app.web.advisor_router import router as advisor_router
 from app.api.v1.tools import router as tools_router
 
 settings = get_settings()
@@ -21,7 +22,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title=settings.app_name,
-    description="Modernized AI-Native JPetStore 6 (FastAPI, SQLAlchemy 2.0, Jinja2)",
+    description="Modernized AI-Native JPetStore 6 (FastAPI, SQLAlchemy 2.0, Jinja2, OpenAPI 3.1 Tools)",
     version="1.0.0",
     lifespan=lifespan
 )
@@ -43,8 +44,9 @@ app.include_router(catalog_router)
 app.include_router(cart_router)
 app.include_router(account_router)
 app.include_router(order_router)
+app.include_router(advisor_router)
 
-# AI-Native API routers
+# AI-Native API routers (OpenAPI 3.1 Autonomous Agent Tool-Calling)
 app.include_router(tools_router)
 
 @app.get("/favicon.ico", include_in_schema=False)

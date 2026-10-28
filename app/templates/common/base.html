@@ -6,43 +6,116 @@
     <title>{% block title %}JPetStore Demo{% endblock %}</title>
     <link rel="stylesheet" href="/static/css/jpetstore.css" type="text/css">
     <style>
-        /* Fix legacy float containment & prevent footer overlap */
-        #Header {
-            clear: both;
+        #Header { clear: both; overflow: hidden; }
+        #Content { clear: both; overflow: hidden; min-height: 450px; background-color: #fff; }
+        #Footer { clear: both; overflow: hidden; width: 100%; }
+        #Catalog { clear: both; overflow: hidden; }
+        #Cart { width: 100% !important; float: none !important; box-sizing: border-box; padding: 1ex; }
+        #Cart table { margin-left: auto; margin-right: auto; width: 95%; }
+        #Separator { clear: both; margin: 0; height: 0; line-height: 0; font-size: 0; }
+
+        /* Floating AI Advisor Widget */
+        #AIAdvisorBtn {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            background: linear-gradient(135deg, #005e21 0%, #17833a 100%);
+            color: #fff;
+            padding: 12px 18px;
+            border-radius: 50px;
+            font-size: 14px;
+            font-weight: bold;
+            box-shadow: 0 4px 15px rgba(0, 94, 33, 0.4);
+            cursor: pointer;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border: 2px solid #54c07a;
+            transition: transform 0.2s;
+        }
+        #AIAdvisorBtn:hover { transform: scale(1.05); }
+
+        #AIAdvisorModal {
+            display: none;
+            position: fixed;
+            bottom: 80px;
+            right: 24px;
+            width: 380px;
+            max-height: 520px;
+            background: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            border: 1px solid #ddd;
+            z-index: 1001;
             overflow: hidden;
+            flex-direction: column;
+            font-family: helvetica, arial, sans-serif;
         }
-        #Content {
-            clear: both;
-            overflow: hidden;
-            min-height: 450px;
-            background-color: #fff;
+        #AIAdvisorHeader {
+            background: #005e21;
+            color: #fff;
+            padding: 12px 16px;
+            font-size: 14px;
+            font-weight: bold;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
-        #Footer {
-            clear: both;
-            overflow: hidden;
-            width: 100%;
+        #AIAdvisorBody {
+            padding: 14px;
+            max-height: 380px;
+            overflow-y: auto;
+            font-size: 13px;
+            color: #333;
         }
-        #Catalog {
-            clear: both;
-            overflow: hidden;
+        #AIAdvisorFooter {
+            padding: 10px;
+            background: #f5f5f5;
+            border-top: 1px solid #eee;
+            display: flex;
+            gap: 6px;
         }
-        #Cart {
-            width: 100% !important;
-            float: none !important;
-            box-sizing: border-box;
-            padding: 1ex;
+        #AIAdvisorFooter input {
+            flex: 1;
+            padding: 8px 12px;
+            border: 1px solid #ccc;
+            border-radius: 20px;
+            font-size: 12px;
         }
-        #Cart table {
-            margin-left: auto;
-            margin-right: auto;
-            width: 95%;
+        #AIAdvisorFooter button {
+            background: #005e21;
+            color: white;
+            border: none;
+            padding: 6px 14px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 12px;
         }
-        #Separator {
-            clear: both;
-            margin: 0;
-            height: 0;
-            line-height: 0;
-            font-size: 0;
+        .ai-msg {
+            background: #f0f8f3;
+            border-left: 3px solid #005e21;
+            padding: 8px 12px;
+            border-radius: 4px;
+            margin-bottom: 10px;
+            line-height: 1.4;
+        }
+        .user-msg {
+            background: #eef2f7;
+            padding: 8px 12px;
+            border-radius: 4px;
+            margin-bottom: 10px;
+            text-align: right;
+            color: #1a3962;
+        }
+        .acc-chip {
+            background: #e2f0d9;
+            border: 1px solid #b8dfa9;
+            padding: 4px 8px;
+            border-radius: 4px;
+            margin: 4px 0;
+            display: block;
+            font-size: 12px;
         }
     </style>
 </head>
@@ -71,7 +144,7 @@
         <div id="Search">
             <div id="SearchContent">
                 <form action="/catalog/search" method="get">
-                    <input type="text" name="keywords" size="14" placeholder="Search catalog...">
+                    <input type="text" name="keywords" size="14" placeholder="Search or ask AI...">
                     <input type="submit" value="Search">
                 </form>
             </div>
@@ -103,5 +176,79 @@
         </div>
         <div id="Separator">&nbsp;</div>
     </div>
+
+    <!-- Interactive AI Pet Advisor Drawer -->
+    <div id="AIAdvisorBtn" onclick="toggleAdvisor()">
+        <span>🐾</span> AI Pet Advisor
+    </div>
+
+    <div id="AIAdvisorModal">
+        <div id="AIAdvisorHeader">
+            <span>🐾 Smart Pet Advisor</span>
+            <span style="cursor:pointer;" onclick="toggleAdvisor()">&times;</span>
+        </div>
+        <div id="AIAdvisorBody">
+            <div class="ai-msg">
+                Hello! I am your AI Pet Care Advisor. I can analyze your cart for essential accessories, recommend pets for your lifestyle (e.g. <i>"apartment living"</i>), or answer dietary questions!
+            </div>
+            <div id="AdvisorInsights"></div>
+        </div>
+        <div id="AIAdvisorFooter">
+            <input type="text" id="AdvisorInput" placeholder="Ask about pet care or diet..." onkeypress="if(event.key==='Enter') sendAdvisorQuery()">
+            <button onclick="sendAdvisorQuery()">Ask</button>
+        </div>
+    </div>
+
+    <script>
+        let advisorOpen = false;
+        function toggleAdvisor() {
+            advisorOpen = !advisorOpen;
+            const modal = document.getElementById("AIAdvisorModal");
+            modal.style.display = advisorOpen ? "flex" : "none";
+            if (advisorOpen) {
+                fetchCartInsights();
+            }
+        }
+
+        async function fetchCartInsights() {
+            try {
+                const res = await fetch("/advisor/cart_insights");
+                const data = await res.json();
+                const container = document.getElementById("AdvisorInsights");
+                if (data.recommended_accessories && data.recommended_accessories.length > 0) {
+                    let html = "<div style=\"margin-top:8px; font-weight:bold; color:#005e21;\">🛒 Recommended for Your Cart:</div>";
+                    data.recommended_accessories.forEach(item => {
+                        html += "<div class=\"acc-chip\"><b>" + item.name + "</b> ($" + item.price.toFixed(2) + ")<br><small style=\"color:#555;\">" + item.tip + "</small></div>";
+                    });
+                    container.innerHTML = html;
+                }
+            } catch (e) {
+                console.error("Cart insights error:", e);
+            }
+        }
+
+        async function sendAdvisorQuery() {
+            const input = document.getElementById("AdvisorInput");
+            const msg = input.value.trim();
+            if (!msg) return;
+
+            const body = document.getElementById("AIAdvisorBody");
+            body.innerHTML += "<div class=\"user-msg\">" + msg + "</div>";
+            input.value = "";
+
+            try {
+                const res = await fetch("/advisor/chat", {
+                    method: "POST",
+                    headers: {"Content-Type": "application/json"},
+                    body: JSON.stringify({message: msg})
+                });
+                const data = await res.json();
+                body.innerHTML += "<div class=\"ai-msg\">" + data.answer + "</div>";
+                body.scrollTop = body.scrollHeight;
+            } catch (e) {
+                body.innerHTML += "<div class=\"ai-msg\" style=\"color:red;\">Unable to contact Advisor service.</div>";
+            }
+        }
+    </script>
 </body>
 </html>

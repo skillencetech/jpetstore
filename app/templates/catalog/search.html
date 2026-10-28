@@ -8,6 +8,12 @@
 <div id="Catalog">
     <h2>Search Results for: "{{ keywords }}"</h2>
 
+    {% if is_semantic %}
+        <div style="background-color: #e8f4fd; border: 1px solid #70b4e8; border-radius: 4px; padding: 10px; margin: 10px auto; max-width: 600px; color: #0c5460; font-size: 13px;">
+            ✨ <b>AI Semantic Search Activated:</b> Showing results matched by pet temperament, lifestyle, and care traits!
+        </div>
+    {% endif %}
+
     {% if product_list %}
     <table>
         <tr>
@@ -24,7 +30,8 @@
         {% endfor %}
     </table>
     {% else %}
-    <p>No products found matching your search.</p>
+    <p>No products found matching your search. Try searching for attributes like <i>"apartment dog"</i>, <i>"freshwater"</i>, or <i>"talking bird"</i>.</p>
     {% endif %}
+    <div id="Separator">&nbsp;</div>
 </div>
 {% endblock %}
