@@ -1,86 +1,108 @@
-# JPetStore Modernization: Tokenomics & AI Telemetry Audit
+# JPetStore Modernization: Tokenomics & AI Usage Audit
 
-**Document Version:** 1.0.0  
-**Target Reference:** docs/ASSESSMENT.pdf (Evaluation Area: *Tokenomics & Resource Efficiency*)  
+**Document Version:** 2.0.0  
+**Target Reference:** docs/ASSESSMENT.pdf (Evaluation Area: *Tokenomics*)  
 **System:** JPetStore AI-Native Python Platform
 
 ---
 
-## 1. Executive Summary & Tokenomics Philosophy
+## 1. Scope
 
-In modern software modernization, an "AI-Native" application must be evaluated not only on whether it incorporates AI capabilities, but on the **efficiency, sustainability, and economic viability** of its AI architecture (**Tokenomics**).
+This audit covers two separate things, and keeps them apart:
 
-Naive AI implementations route raw user queries and entire product databases through large language models (LLMs) on every request, resulting in:
-1. Prohibitive token costs ($10,000s/month at scale).
-2. Unacceptable web request latencies (1,500ms – 4,000ms per search).
-3. Extreme susceptibility to rate limits and vendor lock-in.
+* **Part A: AI usage while building the application.** Measured as far as the tooling allows.
+* **Part B: Cost design of the AI features inside the application.** A design analysis, not a benchmark.
 
-The modernized JPetStore platform adopts a **High-Efficiency Hybrid AI Architecture**:
-* **Catalog Semantic Search:** Implements local, vector-aligned semantic scoring and in-memory LRU caching, delivering **sub-5 millisecond response times at ZERO external token cost**.
-* **Autonomous Agent Tools:** Schema-minimized OpenAPI 3.1 Pydantic interfaces designed to consume **< 150 prompt tokens per function declaration**.
-* **AI Pet Advisor:** Context-bounded recommendation engine matching cart category affinities against grounded database items without unbounded conversational token bleed.
+Anything not measured is labeled as such.
 
 ---
 
-## 2. Quantitative Architecture Comparison
+## 2. Part A: AI Resource Use During the Build (Measured)
 
-| Architectural Metric | Naive LLM Architecture (External Prompting) | Modernized JPetStore AI-Native Architecture | Optimization Factor |
-| :--- | :--- | :--- | :--- |
-| **Catalog Search Mechanism** | Unstructured prompt containing entire catalog (16 products, 28 items) sent to GPT-4o / Claude 3.5 | In-memory semantic keyword scoring with LRU cache (app/services/ai_service.py) | **100% Token Reduction** |
-| **Tokens per Search Query** | ~2,500 input tokens + 350 output tokens | **0 external tokens** (Local async compute) | **Infinite Efficiency** |
-| **Search Request Latency** | 1,800ms – 3,200ms | **1.2ms – 4.5ms** | **~600x Faster** |
-| **Cost per 10,000 Searches** | ~$35.00 – $60.00 USD | **$0.00 USD** | **100% Savings** |
-| **Agent Tool Definition Payload** | 1,200 tokens (loose schemas, verbose descriptions) | **145 tokens** (Concise Pydantic v2 schemas) | **88% Schema Compression** |
-| **Context Window Consumption** | Unbounded conversation history (10k+ tokens) | Bounded cart state (category IDs + item IDs) | **95% Context Compression** |
-| **Availability / SLA** | Dependent on external LLM uptime & rate limits | In-process, 100% autonomous local SLA | **Enterprise Resilient** |
+### 2.1 What the tooling exposes
+
+The Antigravity IDE reports quota as a **percentage of each model pool**, not as token counts. Gemini models share one pool, and Claude and GPT models share another. Token counts per prompt, cache hits and cost were not available, so none are reported. Percentages are not converted to tokens or cost.
+
+### 2.2 Pool readings
+
+| Reading | Gemini weekly remaining | Gemini five-hour remaining | Claude and GPT weekly remaining |
+| :-- | :-: | :-: | :-: |
+| 28 Oct, 9:28 AM | 89% | 100% | 0% |
+| 28 Oct, 12:34 PM | 80% | 71% | 0% |
+| Change | 9 points | 29 points | none (already exhausted) |
+
+The Claude and GPT pool was already exhausted at both readings, so the work in this window ran on Gemini models. The pools are account-wide and may include other work.
+
+### 2.3 Prompts by milestone
+
+The full list of 66 prompts across two working sessions is in the Prompt Log, tagged by milestone.
+
+| Milestone | Prompts |
+| :-- | :-: |
+| M0 Discovery and decomposition | 3 |
+| M1 Strategy, decisions and ADRs | 9 |
+| M2 Foundation and dependency resolution | 4 |
+| M3 Catalog and UI rendering | 1 |
+| M4 Cart, preferences and visual parity | 3 |
+| M5 Account, security and localization | 8 |
+| M6 Orders and checkout | 3 |
+| M7 AI-native layer | 7 |
+| M8 Verification, documentation and deployment | 20 |
+| M9 Submission and handover | 8 |
+| **Total** | **66** |
+
+Of these, 15 prompts reported a defect or a parity gap (build errors, runtime errors, layout and feature gaps). These are the iteration evidence: they show where generated output needed correction.
+
+### 2.4 Practices applied to limit consumption
+
+* **Decisions before code.** Nine prompts went to strategy and ADRs before generation began, which reduced rework on structure.
+* **Reuse of the existing front end.** Porting JSPs to Jinja2 avoided generating and validating a separate SPA (ADR-002). The saving was not measured.
+* **Bounded scope per request.** Work was requested domain by domain (catalog, cart, account, orders, AI layer).
+* **Verification gates.** Linting, type checking, security scanning and regression tests run after generation (see the Guardrails report).
+* **Fixes driven by evidence.** Defect prompts quote the error text or attach a screenshot rather than describing symptoms loosely.
+
+### 2.5 Limits of the measurement
+
+* Percentages cannot be attributed to a single milestone or model.
+* Only two readings were taken, so consumption is not split by milestone.
+* The model used per prompt was not recorded.
+* No claim of efficiency relative to a baseline is made, because no baseline was run.
 
 ---
 
-## 3. Detailed Token Optimization Strategies
+## 3. Part B: Runtime Cost Design of the AI Features (Design Analysis)
 
-### 3.1 Strategy 1: Schema Minimization for Agent Tool-Calling (`/api/v1/tools`)
-When an external LLM agent (e.g., OpenAI Assistant, LangChain, or Claude) interfaces with JPetStore, all tool declarations are prepended to the system context. Excessively verbose OpenAPI schemas consume tokens on *every single agent invocation*.
+### 3.1 Design
 
-In app/api/v1/tools.py:
-* Tool endpoints use compact Pydantic v2 schemas (`ProductToolResponse`, `ItemToolResponse`, `OrderQuoteResponse`).
-* Field descriptions are concise, disambiguated, and free of redundant phrasing.
-* **Token impact:** The complete 5-tool suite fits within **~380 total tokens**, preserving 99.5% of the agent's context window for user reasoning.
+Semantic search and the Pet Advisor use in-process, rule-based scoring over catalog data (`app/services/ai_service.py`). They make **no calls to an external LLM or embedding service**. Consequences that follow directly from that design:
 
-```mermaid
-graph LR
-    AgentContext["Agent Context Window (128k)"]
-    VerboseSchema["Naive Tool Schemas<br/>(2,500 tokens / 2.0% context)"]
-    OptimizedSchema["JPetStore Pydantic Schemas<br/>(380 tokens / 0.3% context)"]
+* No per-request token cost.
+* No dependency on an external AI service's availability or rate limits.
+* Catalog data stays in-process.
+* Behavior is deterministic and testable with `pytest`.
 
-    AgentContext --> OptimizedSchema
-    style OptimizedSchema fill:#2ecc71,color:#fff
-    style VerboseSchema fill:#e74c3c,color:#fff
-```
+### 3.2 Agent tool endpoints
 
-### 3.2 Strategy 2: Hybrid In-Memory Semantic Scoring vs Remote Embedding APIs
-Rather than calling remote embedding APIs (such as OpenAI `text-embedding-3-small` or Vertex AI) on every user search keystroke:
-1. Products and pet descriptions are tokenized and scored using weighted semantic field matrices in app/services/ai_service.py.
-2. The results are cached in a thread-safe, TTL-bounded LRU cache (app/repositories/catalog_repository.py).
-3. **Outcome:** Instant response, zero token consumption, and zero external network latency.
+The `/api/v1/tools` endpoints use compact Pydantic v2 schemas with concise field descriptions. An external agent that loads these definitions pays tokens for them on each invocation, so schema size matters. The size has **not been measured**. It can be measured by passing the generated `/openapi.json` for the tool routes to a tokenizer and reporting the count with the tokenizer name.
 
-### 3.3 Strategy 3: Bounded Cart State for AI Advisor
-The Smart Pet Advisor (app/web/advisor_router.py) computes tailored cross-sells and animal care advice.
-* Instead of serializing the entire customer order history and raw HTML templates into a prompt, only active `category_ids` (`FISH`, `CATS`, etc.) are passed.
-* Recommendations are drawn deterministically from catalog inventory, eliminating hallucination risks and token consumption entirely.
+### 3.3 Bounded advisor input
+
+The advisor receives active category IDs and item IDs from the cart and profile preferences, and draws recommendations from catalog records. It does not send order history or rendered HTML to any model.
+
+### 3.4 Trade-off
+
+Local scoring is free, private and deterministic, but it matches on weighted keywords and category concepts rather than learned meaning. Queries phrased outside those rules will return weaker results than an embedding or LLM approach. The scorer sits behind a service interface, so a model-backed implementation can replace it at the cost of tokens, latency and an external dependency. If that were done, the controls in the Guardrails report (input screening, output validation, token limits) become required.
+
+### 3.5 Illustrative comparison (not measured)
+
+If every search sent the full catalog (16 products, 28 items) to an external model, input tokens per query would scale with catalog size and prompt design, and cost would scale with the provider's pricing. This is a qualitative comparison. No dollar or latency figures are claimed, because none were measured.
 
 ---
 
-## 4. Financial Projection Model (100,000 MAU)
+## 4. What Would Be Done With More Time
 
-Projecting operating costs for 100,000 Monthly Active Users (MAU) with typical ecommerce engagement:
-* Average searches per user session: 4.5
-* Average tool invocations per agent session: 3.0
-* Total monthly operations: ~750,000 operations.
-
-| Architecture Option | Monthly Token Consumption | Estimated Monthly LLM Bill | Infrastructure Cost | Total Cost / Month |
-| :--- | :--- | :--- | :--- | :--- |
-| **Naive LLM Integration** | ~1.85 Billion tokens | **$9,250.00 USD** | $120.00 (Standard VMs) | **$9,370.00** |
-| **External Embeddings + RAG** | ~75 Million tokens | **$375.00 USD** | $250.00 (Vector DB + VMs) | **$625.00** |
-| **Modernized JPetStore AI-Native** | **0 tokens** (Local semantic engine) | **$0.00 USD** | **$40.00** (Single 2-vCPU node) | **$40.00** |
-
-**Conclusion:** The engineering choices in this modernization achieve a **99.57% total cost reduction** compared to naive AI architectures while providing higher availability, lower latency, and 100% deterministic ACID safety.
+1. Log usage per call through an API key or proxy to obtain input, output and cache-read tokens.
+2. Report cost per milestone and cost per passing test.
+3. Run one slice (for example, catalog search) with and without bounded context, and report the difference against a measured baseline.
+4. Benchmark search and advisor latency (median and 95th percentile over at least 100 requests), recording the machine used.
+5. Count the token size of the tool schemas with a named tokenizer.
