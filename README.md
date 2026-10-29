@@ -1,7 +1,7 @@
-# JPetStore Modernized: AI-Native Dual-Scalable Architecture
+# JPetStore Modernized: AI-Native Python Architecture
 
 [![Python 3.12](https://img.shields.io/badge/Python-3.12+-blue.svg)](https://www.python.org/downloads/)
-[![FastAPI](https://img.shields.io/badge/Framework-FastAPI%200.110-009688.svg)](https://fastapi.tiangolo.com/)
+[![FastAPI](https://img.shields.io/badge/Framework-FastAPI-009688.svg)](https://fastapi.tiangolo.com/)
 [![SQLAlchemy 2.0](https://img.shields.io/badge/ORM-SQLAlchemy%202.0%20Async-red.svg)](https://www.sqlalchemy.org/)
 [![OpenAPI 3.1](https://img.shields.io/badge/API-OpenAPI%203.1%20Tools-brightgreen.svg)](http://localhost:8080/docs)
 [![Code Quality](https://img.shields.io/badge/Quality-Ruff%20%7C%20Mypy%20%7C%20Bandit-purple.svg)](.github/workflows/ci.yml)
@@ -9,148 +9,131 @@
 
 ---
 
-## 1. Executive Summary & Assessment Mandate
+## 1. Summary
 
-This repository represents the end-to-end modernization of the canonical **MyBatis JPetStore 6** ([github.com/mybatis/jpetstore-6](https://github.com/mybatis/jpetstore-6)) from a legacy Java 11 / Spring MVC 5.3 / MyBatis 3 / HSQLDB monolith into a **production-ready, dual-scalable, AI-native Python 3.12 enterprise application**.
+This repository modernizes **MyBatis JPetStore 6** ([github.com/mybatis/jpetstore-6](https://github.com/mybatis/jpetstore-6)), a Java 11 / Spring MVC 5.3 / MyBatis 3 / HSQLDB application, into a Python 3.12+ application on FastAPI, SQLAlchemy 2.0 and Jinja2. It was built for the AI-Native Application Modernization Assessment (`docs/ASSESSMENT.pdf`). The client confirmed that the approach, preparation and presentation were at the candidate's discretion, including fixing identified vulnerabilities and adding AI capabilities.
 
-Developed in strict conformance with `docs/ASSESSMENT.pdf`, the system achieves two primary engineering mandates:
-1. **100% Visual and Behavioral Parity:** Full fidelity across all legacy ecommerce workflows—including the 5-category taxonomy, interactive image map, Pet Favorites (`#MyList`) side-by-side layout, multi-step checkout wizard, and all 38 original graphic assets.
-2. **Architectural Hardening:** Eliminating 20-year-old monolithic design constraints (JVM-pinned stateful sessions, thread-per-request blocking I/O, plaintext password storage, and repetitive uncached database roundtrips) without breaking ACID transaction boundaries.
+Goals and what was done:
+
+1. **Preserve business behavior and the look of the original.** The catalog (5 categories, 16 products, 28 items), image map, cart with Pet Favorites, multi-step checkout and order history are ported. The original CSS, markup structure and all 38 images are reused. Parity is claimed for the documented workflows, checked by regression tests and visual comparison with the original. Remaining differences are tracked in `docs/migration_issue_log.md`.
+2. **Fix weaknesses in the legacy design.** Plaintext passwords are replaced with salted scrypt hashes (upgraded on first login), session state moves to signed client cookies, access control is centralized, and order data is restricted to its owner.
+3. **Add a small AI layer with no external cost.** Semantic search, a cart-aware Pet Advisor and OpenAPI tool endpoints for external agents. These features are rule-based and make no LLM calls.
+4. **Show the engineering approach.** Architecture decomposition, nine ADRs, a deviation log, verification gates, CI, and a prompt log tagged to milestones.
+
+Other functionality: English and Japanese localization (gettext conventions, ISO 639-1 codes, `Accept-Language` negotiation) and a `/health` endpoint.
 
 ---
 
-## 2. Assessment Evaluation Areas Matrix
+## 2. Assessment Areas and Evidence
 
-Every area of evaluation specified in `docs/ASSESSMENT.pdf` is directly addressed and validated within this core delivery:
-
-| Assessment Area | Modernization Strategy & Implementation | Primary Documentation Reference |
+| Assessment Area | What was done | Reference |
 | :--- | :--- | :--- |
-| **1. Architecture Analysis** | Decomposed the legacy Java/Spring/MyBatis stack into discrete domain boundaries, identifying blocking I/O bottlenecks and JVM session locks. | `docs/jpetstore_architecture_decomposition.md` |
-| **2. Context Building** | Captured end-to-end user workflows, database schemas, and JSP presentation constructs to establish grounded specifications. | `docs/jpetstore_migration_proposal_and_roadmap.md` |
-| **3. Specification Creation** | Formalized functional and non-functional requirements across Catalog, Cart, Account, and Order checkout wizards. | `docs/migration_issue_log.md` |
-| **4. Architectural Decisions** | Enacted 6 formal Architecture Decision Records (ADRs) evaluating trade-offs across concurrency, statefulness, caching, and auth. | `docs/architecture_decision_records.md` |
-| **5. AI Guardrails** | Implemented multi-layered defenses: deterministic `Decimal` math, Pydantic type constraints, bounded inputs, zero raw SQL, and atomic inventory locks. | `docs/ai_guardrails_and_verification.md` |
-| **6. CI/CD Practices** | Automated GitHub Actions workflow (`.github/workflows/ci.yml`) enforcing Ruff linting, Mypy strict typing, Bandit AST security scans, and Pytest coverage. | `.github/workflows/ci.yml` |
-| **7. Live Demonstration** | Operational ASGI application with live storefront, interactive Smart Pet Advisor drawer, and OpenAPI 3.1 tool endpoints. | `docs/live_demonstration_guide.md` |
-| **8. Tokenomics** | Engineered an in-process semantic scoring engine and schema-compressed agent tools achieving sub-5ms responses at **$0.00 external LLM token cost** (99.57% savings). | `docs/tokenomics_telemetry_audit.md` |
+| **Architecture analysis** | Legacy controllers, services, mappers, data dictionary and checkout flow decomposed; risks identified. | `docs/jpetstore_architecture_decomposition.md` |
+| **Context building** | The decomposition served as the baseline for each milestone; issues and corrections are logged. | `docs/jpetstore_architecture_decomposition.md`, `docs/migration_issue_log.md` |
+| **Specification creation** | Scope per milestone and every intentional deviation from legacy behavior, with rationale. | `docs/jpetstore_migration_proposal_and_roadmap.md`, `docs/modernization_deviations_and_rationales.md` |
+| **Architectural decisions** | Nine ADRs with options, decision and trade-offs. | `docs/architecture_decision_records.md` |
+| **AI guardrails** | Verification gates (Ruff, Mypy, Bandit, Pytest), grounded outputs, typed schemas, atomic stock updates, central access control. | `docs/ai_guardrails_and_verification.md` |
+| **CI/CD** | GitHub Actions: lint, type check, security scan, tests, Docker build. | `.github/workflows/ci.yml` |
+| **Demonstration** | Eight-step script for the running application, with a Q&A sheet. | `docs/live_demonstration_guide.md` |
+| **Tokenomics** | AI usage while building (pool percentages and prompt counts per milestone) and runtime cost design of the AI features. | `docs/tokenomics_telemetry_audit.md` |
+
+A single index mapping each area to its artifact and how to verify it is in `docs/evidence_index.md`.
 
 ---
 
-## 3. Legacy vs. Modernized Architecture Delta
+## 3. Legacy vs. Modernized Architecture
 
-| Architectural Vector | Legacy Reference Architecture (Java 11) | Modernized Platform (Python 3.12) | Architectural Impact & Rationale |
+| Vector | Legacy (Java 11) | Modernized (Python) | Rationale |
 | :--- | :--- | :--- | :--- |
-| **Runtime & Concurrency** | Thread-per-request model inside Tomcat servlet containers. Blocking I/O threads. | Non-blocking ASGI event loop (FastAPI + Uvicorn) with async connection pooling. | Handles thousands of concurrent idle client connections per core; eliminates thread starvation. |
-| **Session State & Scale** | Server-pinned `HttpSession` (`CartBean`, `AccountBean`). Requires sticky load balancers. | Cryptographically signed client session cookies (`itsdangerous` HMAC-SHA256). | Server memory is completely stateless. Any backend worker can fulfill any request behind a round-robin load balancer. |
-| **Credential Security** | Passwords stored as cleartext in `signon.password`. | Salted `scrypt` / `argon2id` cryptographic key derivation. | Eliminates OWASP vulnerability; transparently auto-upgrades legacy credentials upon first login without user friction. |
-| **Data Access & SQL** | MyBatis XML mappers using dynamic string concatenation (`${keyword}`). | SQLAlchemy 2.0 asynchronous parameterized ORM expressions. | 100% parameterization guarantees zero SQL injection risks; statically validated via Bandit AST scanning. |
-| **Presentation Layer** | JSP / JSTL scriptlets and custom tag libraries. | Jinja2 templates reproducing the original DOM structure and CSS class hierarchy. | Eliminates servlet container dependencies while retaining 100% pixel and responsive parity. |
-| **Catalog Caching** | Repetitive database roundtrips on every page hit. | Selective In-Memory Cache-Aside (`@lru_cache`, `SearchCache` with TTL). | Eliminates 85%+ database load. Transactional data (`inventory.qty`, `sequence.nextid`) is **never cached** to guarantee ACID compliance. |
-| **Search Mechanism** | SQL `LIKE %keyword%` wildcard matching. Fails on natural language intent. | Local hybrid semantic scoring & keyword matching. | Understands conversational queries (e.g. *"friendly dog for kids"*) with < 5ms latency and zero external token cost. |
-| **Machine Integration** | Monolithic HTML rendered pages only (No APIs). | Dual Interface: Jinja2 Web UI + OpenAPI 3.1 Autonomous Agent Tool-Calling Suite. | Allows external LLM agents (LangChain, OpenAI, Claude) to interact with store capabilities deterministically. |
+| **Runtime** | Thread-per-request on Tomcat, blocking I/O | Async ASGI (FastAPI + Uvicorn), async connection pooling | Better I/O concurrency per worker. Not load tested. |
+| **Session state** | Server-held `HttpSession` | Signed client cookies (`itsdangerous`, HMAC-SHA256) | No server-side session store, so any instance can serve any request. Cookies are signed, not encrypted, and limited to about 4 KB. |
+| **Credentials** | Plaintext in `signon.password` | Salted scrypt (Python standard library), upgraded on first login | Removes plaintext storage. Argon2id was the original choice but its native build failed in the target environment (Issue 02, ADR-006). |
+| **Data access** | MyBatis XML mappers with `#{}` bound parameters | SQLAlchemy 2.0 async, parameterized expressions | Parameterization is preserved. Adds typed queries and static analysis. |
+| **Presentation** | JSP / JSTL | Jinja2 templates reusing the original DOM and CSS classes | Removes the servlet container dependency while keeping the original look. |
+| **Catalog caching** | None | Bounded in-process LRU and TTL caches for static catalog data | Fewer repeated catalog queries. Stock and order sequence are never cached. Hit rate not measured. |
+| **Search** | SQL `LIKE %keyword%` | In-process weighted semantic scoring and keyword matching | Handles conversational queries such as *"friendly dog for kids"*. No external calls. |
+| **Machine integration** | HTML pages only | Web UI plus OpenAPI 3.1 tool endpoints | External agents can call store operations through typed contracts. |
+| **Access control** | Per-controller session checks | Central dependency with database liveness check | Fewer omissions, no stale sessions, session fixation defense. |
 
 ---
 
-## 4. System Topology & 3-Tier Layered Architecture
+## 4. System Topology
 
 ```
-[ Web Browser (Human User) ]       [ Autonomous AI Agent (LLM Engine) ]
-            │                                       │
-            ▼ (HTTP / HTML)                         ▼ (REST / JSON)
+[ Web Browser ]                        [ External AI Agent ]
+       │                                        │
+       ▼ HTTP / HTML                            ▼ REST / JSON
 ┌───────────────────────────────────────────────────────────────────────┐
-│ PRESENTATION & ROUTING LAYER                                          │
-│  - Web Routers (Jinja2 SSR, Dynamic i18n Context, HMAC Signed Session)│
-│  - Agent Tools Router (OpenAPI 3.1 Pydantic Contracts: /api/v1/tools) │
+│ PRESENTATION & ROUTING                                                │
+│  - Web routers (Jinja2, i18n context, signed-cookie session)          │
+│  - Agent tools router (OpenAPI 3.1 contracts: /api/v1/tools)          │
+│  - Central auth dependency (get_current_active_user)                  │
 └───────────────────┬───────────────────────────────┬───────────────────┘
-                    │                               │
                     ▼                               ▼
 ┌───────────────────────────────────────────────────────────────────────┐
-│ DOMAIN SERVICE LAYER (Deterministic Business Logic & ACID Rules)      │
-│  - CatalogService (LRU Query Caching & Taxonomy Resolution)           │
-│  - CartService (Stateless Cookie Mutations, Decimal Precision Math)   │
-│  - AccountService (Argon2id/Scrypt Password Hashing & Transparent Up) │
-│  - OrderService (Atomic Multi-Step Checkout, Row-Level Stock Locks)   │
-│  - AIService (In-Process Semantic Scoring, Contextual Pet Advisor)    │
+│ SERVICE LAYER                                                         │
+│  - CatalogService   - CartService (Decimal math)                      │
+│  - AccountService (scrypt hashing, upgrade on login)                  │
+│  - OrderService (atomic checkout, conditional stock decrement)        │
+│  - AIService (in-process semantic scoring, rule-based advisor)        │
 └───────────────────┬───────────────────────────────────────────────────┘
-                    │
                     ▼
 ┌───────────────────────────────────────────────────────────────────────┐
-│ PERSISTENCE & DATA REPOSITORY LAYER                                   │
-│  - CatalogRepository (SearchCache with TTL, Selective Cache-Aside)    │
-│  - AccountRepository (User Identity, Profile Preferences, Signon)     │
-│  - OrderRepository (Atomic Sequence Increment, Real-Time Stock Decre) │
-│  - SQLAlchemy 2.0 Async Engine + QueuePool (Non-blocking I/O)         │
-│  - Relational Database (SQLite local dev / PostgreSQL production)     │
+│ REPOSITORY LAYER                                                      │
+│  - CatalogRepository (SearchCache, catalog caches)                    │
+│  - AccountRepository   - OrderRepository (sequence, stock)            │
+│  - SQLAlchemy 2.0 async engine and connection pool                    │
+│  - SQLite (default) / PostgreSQL (by configuration)                   │
 └───────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## 5. Deep-Dive Architectural Decisions (ADRs)
+## 5. Architecture Decision Records
 
-For complete technical evaluations and trade-off matrices, consult `docs/architecture_decision_records.md` and `docs/modernization_deviations_and_rationales.md`:
+Full text, options and trade-offs are in `docs/architecture_decision_records.md`. Intentional deviations from legacy behavior are in `docs/modernization_deviations_and_rationales.md`.
 
-### ADR-001: Asynchronous ASGI Runtime vs. Thread-per-Request Blocking
-* **Context:** Legacy JPetStore utilized Tomcat's traditional thread pool model where each concurrent request occupies a dedicated OS/JVM thread during blocking JDBC operations.
-* **Decision:** Replaced with FastAPI running on Uvicorn (ASGI). Database I/O is dispatched asynchronously via `aiosqlite` and `asyncpg` drivers.
-* **Consequence:** Unlocks high vertical throughput, preventing thread pool exhaustion during peak checkout traffic while minimizing RAM consumption per connection.
-
-### ADR-002: Stateless Signed Cookies vs. Server-Pinned `HttpSession`
-* **Context:** In Spring MVC, customer shopping carts (`CartBean`) were bound to the server's in-memory `HttpSession`. Scaling out required sticky sessions or distributed session clusters (Redis), creating operational fragility and losing carts during node failover.
-* **Decision:** Migrated the cart and authentication state into cryptographically signed, tamper-proof client-side session cookies (`itsdangerous` HMAC-SHA256).
-* **Consequence:** Zero server-side session memory. Any backend replica in a horizontally scaled cluster can service any incoming request behind a standard round-robin load balancer.
-
-### ADR-003: Transparent Password Hash Upgrade (Zero-Downtime Security)
-* **Context:** Legacy JPetStore stored cleartext passwords directly in the `signon.password` column.
-* **Decision:** Implemented salted `scrypt` and `argon2id` key derivation within `app/services/account_service.py`. When a legacy user (e.g. `j2ee`) authenticates with cleartext, the service verifies the match, immediately computes an `scrypt` salt and hash, and updates the database row.
-* **Consequence:** Eliminates a critical OWASP vulnerability seamlessly without requiring forced password resets or user friction.
-
-### ADR-004: 100% Presentation Layer Parity
-* **Context:** Complete visual fidelity with the reference repository was an explicit assessment requirement.
-* **Decision:** Transpiled all legacy JSPs into clean Jinja2 templates (`app/templates/`), preserving the exact DOM hierarchy, table structures, and CSS selectors from `app/static/css/jpetstore.css`.
-* **Consequence:** Retains full visual equivalence (including the HTML Image Map and the side-by-side Cart/Pet Favorites float layout) while decoupling from JVM servlet dependencies.
-
-### ADR-005: Selective Cache-Aside Pattern (ACID Guardrail)
-* **Context:** Uncached ecommerce platforms suffer from database saturation on read-heavy browsing, while naive global caching leads to overselling race conditions.
-* **Decision:** Implemented selective caching via `SearchCache` and `@lru_cache`:
-  * **Cached:** Static catalog taxonomy (`category`, `product`, `bannerdata`) with TTL expiration.
-  * **Strictly Excluded from Cache:** Transactional inventory (`inventory.qty`) and order counters (`sequence.nextid`). Inventory deductions are executed via atomic SQL statements (`WHERE qty >= :qty`).
-* **Consequence:** Offloads 85%+ of repetitive database reads while strictly preserving ACID transactional guarantees.
-
-### ADR-006: High-Efficiency Hybrid AI Engine (Tokenomics Optimization)
-* **Context:** Naive AI implementations route every search query and catalog table through remote LLM APIs (GPT-4o/Claude), introducing severe latency (1,500ms–3,000ms), rate limits, and unsustainable token costs ($10,000s/month at scale).
-* **Decision:** Engineered a local, in-memory semantic keyword vector scoring algorithm in `app/services/ai_service.py` backed by `SearchCache`.
-* **Consequence:** Sub-5ms intent discovery with zero external network dependencies and **$0.00 external LLM token cost**.
+| ADR | Decision |
+| :--- | :--- |
+| 001 | FastAPI on Uvicorn (ASGI) as the web framework |
+| 002 | Port the legacy JSPs to Jinja2 and reuse the original CSS and images, instead of building a separate SPA |
+| 003 | SQLAlchemy 2.0 (data mapper, unit of work) with repositories |
+| 004 | Stateless signed session cookies instead of server-held sessions |
+| 005 | Selective cache-aside for static catalog data. Stock and order sequence are never cached |
+| 006 | Salted scrypt password hashing (amended from the original Argon2id choice) |
+| 007 | Embedded AI capabilities: semantic search, agent tools, cart-aware advisor, all without external LLM calls |
+| 008 | SQLite by default, PostgreSQL by configuration |
+| 009 | Central access control and session hardening |
 
 ---
 
-## 6. AI-Native Capabilities & Agent Tool-Calling Suite
+## 6. AI Capabilities
 
-The modernized platform provides native AI capabilities for both human shoppers and autonomous agents:
+The AI features are rule-based and make no calls to an external LLM or embedding service. Matching is keyword and concept based, so unusual phrasing may match less well than a learned model. The scorer sits behind a service interface so a model-backed version could replace it.
 
 ```mermaid
 graph TD
-    User["Human End-User (Browser)"]
-    Agent["Autonomous AI Agent (LLM Engine)"]
+    User["Shopper (Browser)"]
+    Agent["External AI Agent"]
 
-    subgraph Platform["JPetStore AI-Native Core"]
+    subgraph Platform["JPetStore Core"]
         WebUI["Storefront UI & Cart"]
-        ToolAPI["OpenAPI 3.1 Tool Endpoints (/api/v1/tools)"]
-        
-        subgraph AIEngine["Embedded AI Subsystems"]
-            SemanticSearch["Semantic Intent Search<br/>(Local Vector Scoring)"]
-            PetAdvisor["Smart Pet Advisor<br/>(Drawer Widget & Chat API)"]
-            ToolSchemas["Strict Pydantic Tool Schemas<br/>(OpenAPI 3.1 JSON)"]
+        ToolAPI["Tool Endpoints (/api/v1/tools)"]
+
+        subgraph AIFeatures["AI Features (in-process, rule-based)"]
+            SemanticSearch["Semantic Search<br/>(weighted scoring)"]
+            PetAdvisor["Pet Advisor<br/>(drawer widget and chat API)"]
+            ToolSchemas["Typed Pydantic Schemas<br/>(OpenAPI 3.1)"]
         end
 
-        Services["Core Domain Services (Catalog, Cart, Account, Order)"]
+        Services["Domain Services"]
         DB[("Relational Database")]
     end
 
-    User -->|Conversational Query| WebUI
-    User -->|Floating 🐾 Button| PetAdvisor
-    Agent -->|Structured Function Call| ToolAPI
-    
+    User -->|Conversational query| WebUI
+    User -->|Floating button| PetAdvisor
+    Agent -->|Structured call| ToolAPI
+
     WebUI --> SemanticSearch
     SemanticSearch --> Services
     PetAdvisor --> Services
@@ -159,160 +142,148 @@ graph TD
     Services --> DB
 ```
 
-### 1. Natural Language Semantic Search
-Allows users to discover pets using lifestyle descriptors (e.g. *"friendly companion for small apartment"* or *"quiet pet that needs low maintenance"*) rather than exact SKU codes.
+### Semantic search
+Lets shoppers search by lifestyle or temperament (for example *"friendly companion for small apartment"*) instead of exact names.
 
-### 2. Interactive Smart Pet Advisor
-An interactive floating drawer (`#AIAdvisorBtn` with 🐾 icon) embedded across all storefront pages:
-* **Cart Insights (`/advisor/cart_insights`):** Dynamically inspects active cart contents and recommends complementary care accessories (e.g. suggesting water conditioner and filters when purchasing an Angelfish).
-* **Interactive Care Chat (`/advisor/chat`):** Provides instant, domain-bounded answers to dietary and habitat questions.
+### Pet Advisor
+A floating drawer on storefront pages:
+* **Cart insights (`/advisor/cart_insights`):** suggests catalog items related to the cart contents and the signed-in user's favorite category, with one-click add to cart.
+* **Care chat (`/advisor/chat`):** domain-bounded answers to feeding and habitat questions, with a polite fallback for off-topic input.
 
-### 3. OpenAPI 3.1 Autonomous Agent Tool-Calling Suite (`/api/v1/tools`)
-Provides machine-readable, strictly typed interfaces for external LLM agents (LangChain, AutoGen, OpenAI Assistants, Claude):
-* **Interactive Swagger UI:** [http://localhost:8080/docs](http://localhost:8080/docs)
-* **ReDoc Interactive Documentation:** [http://localhost:8080/redoc](http://localhost:8080/redoc)
-* **OpenAPI 3.1 JSON Specification:** [http://localhost:8080/openapi.json](http://localhost:8080/openapi.json)
+Recommendations come only from real catalog items. An early version surfaced items that were not in the catalog. This was fixed by grounding all recommendations in catalog item IDs.
 
-**Available Agent Tool Endpoints:**
-* `GET /api/v1/tools/search_catalog`: Semantic intent-based product lookup.
-* `GET /api/v1/tools/item/{item_id}`: SKU specifications, attributes, unit pricing, and live inventory balance.
-* `GET /api/v1/tools/check_stock/{item_id}`: High-frequency real-time stock availability check.
-* `POST /api/v1/tools/calculate_order_quote`: Deterministic pre-purchase calculation of subtotal, 7% sales tax, and flat shipping.
-* `POST /api/v1/tools/pet_advisor`: Generates structured pet care protocols and recommended accessory SKUs.
+### Agent tool endpoints (`/api/v1/tools`)
+* **Swagger UI:** [http://localhost:8080/docs](http://localhost:8080/docs)
+* **ReDoc:** [http://localhost:8080/redoc](http://localhost:8080/redoc)
+* **OpenAPI JSON:** [http://localhost:8080/openapi.json](http://localhost:8080/openapi.json)
 
----
-
-## 7. AI Guardrails & Defensive Engineering
-
-To ensure responsible, secure, and production-grade AI integration, the platform implements a **Multi-Layer Defensive Guardrail Framework**:
-
-1. **Deterministic Business Isolation:** Pure business logic (order totaling, sales tax calculation, inventory deductions) is **never delegated to unstructured LLM generation**. Calculations use Python's exact `Decimal` arithmetic.
-2. **Prompt Injection & System Escape Defense:** Search queries and chat prompts are sanitized, stripped of control characters, and clamped to 200 characters, eliminating prompt-stuffing attack vectors.
-3. **Hallucination Prevention:** The Pet Advisor and Agent Tools output strictly grounded database entities. Recommendations must cross-reference registered catalog categories.
-4. **SQL Injection Defense:** All database interactions utilize SQLAlchemy 2.0 parameterized expressions (`select(Product).where(Product.category == catid)`). Raw string concatenation is prohibited and statically verified via Bandit AST analysis.
-5. **ACID Concurrency & Anti-Overselling Guard:** Stock decrements use atomic row-level SQL updates (`UPDATE inventory SET qty = qty - :qty WHERE itemid = :itemid AND qty >= :qty`). If inventory is insufficient, an `OutOfStockException` is thrown, rolling back the transaction.
-6. **Declarative Access Control & Stale Session Guard:** Protected operations require declarative injection (`current_user = Depends(get_current_active_user)`) verifying active database existence, eliminating zombie sessions and session fixation across Web (303 redirect) and REST API (401 JSON) planes.
+Endpoints:
+* `GET /api/v1/tools/search_catalog`: intent-based product lookup.
+* `GET /api/v1/tools/item/{item_id}`: SKU details, pricing and live stock.
+* `GET /api/v1/tools/check_stock/{item_id}`: current stock for an item.
+* `POST /api/v1/tools/calculate_order_quote`: subtotal, 7% sales tax and flat shipping, computed deterministically.
+* `POST /api/v1/tools/pet_advisor`: care guidance and recommended accessories.
 
 ---
 
-## 8. Tokenomics & Operating Cost Projections
+## 7. Guardrails and Verification
 
-Detailed metrics and modeling are documented in `docs/tokenomics_telemetry_audit.md`:
+Details and limits are in `docs/ai_guardrails_and_verification.md`.
 
-| Architectural Metric | Naive LLM Architecture (External Prompting) | Modernized JPetStore AI-Native | Architectural Optimization |
-| :--- | :--- | :--- | :--- |
-| **Catalog Search Model** | Entire catalog (16 products, 28 items) sent to GPT-4o per query | In-memory semantic keyword scoring with TTL cache (`SearchCache`) | **100% Token Reduction** |
-| **Tokens per Search** | ~2,500 input + 350 output tokens | **0 external tokens** | **Infinite Efficiency** |
-| **Search Request Latency** | 1,800ms – 3,200ms | **1.2ms – 4.5ms** | **~600x Faster** |
-| **Agent Tool Schema Payload** | 1,200 tokens (loose schemas, verbose descriptions) | **145 tokens** (Compact Pydantic v2 schemas) | **88% Context Compression** |
-| **Monthly Cost (100k MAU)** | **$9,370.00 USD** (Tokens + Infrastructure) | **$40.00 USD** (Single 2-vCPU node) | **99.57% Total Cost Savings** |
+1. **Deterministic business logic.** Totals, tax and stock changes are computed in code with `Decimal` arithmetic, never by a model.
+2. **Bounded input.** Search and chat input is stripped of control characters and limited to 200 characters. Because no LLM is called, there is no model prompt to inject into today. If one were added, injection screening, output validation and token limits would be required.
+3. **Grounded output.** Advisor and tool responses are typed schemas built from catalog records.
+4. **Parameterized queries.** Database access uses SQLAlchemy expressions. Bandit scans for unsafe constructs, and parameterization is enforced by using SQLAlchemy and by code review.
+5. **Atomic stock updates.** `UPDATE inventory SET qty = qty - :qty WHERE itemid = :itemid AND qty >= :qty`. If stock is insufficient, `OutOfStockException` rolls back the transaction.
+6. **Central access control.** Protected routes use `Depends(get_current_active_user)`, which re-checks the account in the database each request, clears the session on sign-in to prevent fixation, and returns a 303 redirect for web clients or 401 JSON for API clients.
+7. **Order privacy.** Order views and order APIs are limited to the owning user, and card numbers are masked in API responses.
 
 ---
 
-## 9. CI/CD Pipeline & Automated Verification
+## 8. Tokenomics
 
-The repository enforces automated verification via GitHub Actions (`.github/workflows/ci.yml`), running on every push and pull request:
+Details are in `docs/tokenomics_telemetry_audit.md`.
+
+**AI use while building (measured).** The IDE exposes quota only as a percentage of each model pool, not as token counts, so token and cost figures are not reported. Two readings were recorded on 28 Oct: the Gemini pool went from 89% to 80% weekly remaining and from 100% to 71% five-hour remaining, while the Claude and GPT pool was already exhausted. The build used 66 prompts across two sessions, tagged by milestone in the Prompt Log. 15 of them reported a defect or parity gap, which is the iteration evidence. The pool is account-wide, so the percentages are an upper bound for this project.
+
+**Runtime cost design of the AI features (design analysis).** Search and the advisor run in-process with no external model calls, so they use no external tokens and have no external dependency. Latency and tool-schema token size were not benchmarked.
+
+---
+
+## 9. CI/CD and Tests
+
+GitHub Actions (`.github/workflows/ci.yml`) runs on every push and pull request. Run results appear under the repository's Actions tab.
 
 ```
-[ Push / PR ] ──► [ Matrix: Python 3.12 ]
+[ Push / PR ] ──► [ Python 3.12 ]
                         │
-                        ├─► 1. Ruff (Linter & PEP 8 Formatter Check)
-                        ├─► 2. Mypy (Static Type Analysis across app/)
-                        ├─► 3. Bandit (Security AST Vulnerability Scan)
-                        ├─► 4. Pytest (Automated Parity & Regression Suite)
-                        └─► 5. Docker Build (Container Validation)
+                        ├─► 1. Ruff (lint and format check)
+                        ├─► 2. Mypy (static types across app/)
+                        ├─► 3. Bandit (security scan)
+                        ├─► 4. Pytest (regression suite)
+                        └─► 5. Docker build
 ```
 
-### Automated Regression Test Suites (`tests/`)
-* `tests/test_database.py`: Verifies DDL execution, table creation, and seed data ingestion.
-* `tests/test_catalog.py`: Validates catalog taxonomy, product resolution, search caching, and live inventory checks.
-* `tests/test_cart.py`: Tests stateless signed cookie cart mutations, quantity adjustments, and decimal arithmetic.
-* `tests/test_account.py`: Tests user authentication, scrypt password hashing, and transparent legacy plaintext migration.
-* `tests/test_order.py`: Tests multi-step checkout execution, sequential order ID generation, atomic inventory decrement, and out-of-stock rollback.
-* `tests/test_tools_api.py`: Validates all OpenAPI 3.1 agent tool endpoints against expected Pydantic schemas.
-* `tests/test_ai_advisor.py`: Tests semantic search ranking algorithms and contextual cross-sell rules.
+Test modules in `tests/`:
+* `test_database.py`: schema creation and seed data ingestion.
+* `test_catalog.py`: taxonomy, product resolution, search caching, live stock checks.
+* `test_cart.py`: signed-cookie cart operations, quantity changes, decimal math.
+* `test_account.py`: sign-in, scrypt hashing, upgrade of legacy plaintext credentials, registration, preferences.
+* `test_order.py`: checkout, order ID sequence, atomic stock decrement, out-of-stock rollback.
+* `test_tools_api.py`: agent tool endpoints and schemas.
+* `test_ai_advisor.py`: semantic ranking and cross-sell rules.
 
 ---
 
-## 10. Operational Runbook & Live Demonstration Guide
+## 10. Run and Verify
 
-### Option 1: Local Development Run (Port 8080)
+### Local run (port 8080)
 
 ```bash
-# 1. Initialize virtual environment from project root
 python -m venv venv
 
-# 2. Activate virtual environment
-# On Linux/macOS:
+# Linux/macOS
 source venv/bin/activate
-# On Windows:
+# Windows
 .\venv\Scripts\activate
 
-# 3. Install dependencies
 pip install -r requirements.txt
-
-# 4. Start the application
 python run.py
 ```
 
-* **Storefront URL:** [http://localhost:8080](http://localhost:8080) (or [http://127.0.0.1:8080](http://127.0.0.1:8080))
-* **Interactive OpenAPI 3.1 Swagger UI:** [http://localhost:8080/docs](http://localhost:8080/docs)
-* **ReDoc Interactive Documentation:** [http://localhost:8080/redoc](http://localhost:8080/redoc)
-* **OpenAPI 3.1 JSON Specification:** [http://localhost:8080/openapi.json](http://localhost:8080/openapi.json)
-* **System Health Check Probe:** [http://localhost:8080/health](http://localhost:8080/health)
-* **Seeded Test Account:** Username: `j2ee` | Password: `j2ee` *(auto-upgrades to salted scrypt on first login)*
+* **Storefront:** [http://localhost:8080](http://localhost:8080)
+* **Swagger UI:** [http://localhost:8080/docs](http://localhost:8080/docs)
+* **ReDoc:** [http://localhost:8080/redoc](http://localhost:8080/redoc)
+* **OpenAPI JSON:** [http://localhost:8080/openapi.json](http://localhost:8080/openapi.json)
+* **Health check:** [http://localhost:8080/health](http://localhost:8080/health)
+* **Seeded account:** `j2ee` / `j2ee` (the password is upgraded to a salted scrypt hash on first sign-in)
 
----
-
-### Option 2: Production Multi-Worker Container (Port 8000)
+### Container (port 8000)
 
 ```bash
-# Build and run the containerized cluster
 docker-compose up --build -d
-
-# Verify cluster status
 docker-compose ps
 docker-compose logs -f
 ```
 
-* **Containerized Storefront URL:** [http://localhost:8000](http://localhost:8000)
-* **Containerized Interactive Swagger UI:** [http://localhost:8000/docs](http://localhost:8000/docs)
-* **Containerized ReDoc Documentation:** [http://localhost:8000/redoc](http://localhost:8000/redoc)
-* **Containerized Health Check Probe:** [http://localhost:8000/health](http://localhost:8000/health)
+* **Storefront:** [http://localhost:8000](http://localhost:8000)
+* **Swagger UI:** [http://localhost:8000/docs](http://localhost:8000/docs)
+* **Health check:** [http://localhost:8000/health](http://localhost:8000/health)
 
----
-
-### Option 3: Manual Execution of Quality & Security Audits
+### Quality and security checks
 
 ```bash
-# Execute full test suite with coverage
 pytest --cov=app --cov-report=term-missing tests/
-
-# Execute Ruff linting and code formatting check
 ruff check .
 ruff format --check .
-
-# Execute Mypy static type checking
 mypy app/
-
-# Execute Bandit security analysis
 bandit -r app/ -c pyproject.toml
 ```
 
 ---
 
-## 11. Comprehensive Documentation Package (`docs/`)
+## 11. Known Limitations
 
-For in-depth architectural analyses, proofs, and evaluation evidence, consult the dedicated records in `docs/`:
+* Sessions are signed but not encrypted cookies, so contents are readable by the client and limited to about 4 KB. Only identifiers and cart references are stored.
+* Search and the advisor are rule-based. Phrasing outside the scoring rules can return weaker results than a learned model.
+* The default database is SQLite, and the automated tests run against SQLite. PostgreSQL is supported by changing the database URL and installing an async PostgreSQL driver.
+* No load or latency benchmarking was performed. Scalability statements describe the design, not measured throughput.
+* Until a seeded legacy account signs in for the first time, its seed password remains plaintext in the database.
+* AI usage during the build is recorded as pool percentage and prompt counts, not tokens.
 
-| Document | Primary Contents & Focus |
+---
+
+## 12. Documentation Index (`docs/`)
+
+| Document | Contents |
 | :--- | :--- |
-| `docs/ASSESSMENT.pdf` | The baseline evaluation rubric and requirements specification. |
-| `docs/modernization_deviations_and_rationales.md` | Comprehensive matrix of architectural deviations with engineering trade-offs and rationale. |
-| `docs/live_demonstration_guide.md` | Step-by-step 8-stage evaluator demonstration walkthrough and Q&A cheatsheet. |
-| `docs/tokenomics_telemetry_audit.md` | Quantitative token efficiency model, caching architecture, and 100k MAU cost projections. |
-| `docs/ai_guardrails_and_verification.md` | Security defenses covering prompt injection, hallucination prevention, SQL injection, and ACID concurrency. |
-| `docs/architecture_decision_records.md` | Formal Architecture Decision Records (ADR-001 through ADR-006). |
-| `docs/jpetstore_architecture_decomposition.md` | Legacy MyBatis JPetStore 6 structural analysis, component inventory, and runtime profile. |
-| `docs/jpetstore_migration_proposal_and_roadmap.md` | Phased modernization roadmap and verified Definition of Done (DoD) criteria. |
-| `docs/migration_issue_log.md` | Production engineering log documenting 14 architectural challenges, root causes, and resolutions. |
+| `docs/ASSESSMENT.pdf` | The assessment brief. |
+| `docs/evidence_index.md` | Maps each assessment area to its evidence and how to verify it. |
+| `docs/jpetstore_architecture_decomposition.md` | Legacy structure, components, data dictionary and checkout flow. |
+| `docs/jpetstore_migration_proposal_and_roadmap.md` | Phased roadmap and definition of done. |
+| `docs/architecture_decision_records.md` | ADR-001 through ADR-009. |
+| `docs/modernization_deviations_and_rationales.md` | Each intentional deviation from legacy behavior, with rationale and trade-offs. |
+| `docs/ai_guardrails_and_verification.md` | Guardrails, verification tooling and limits. |
+| `docs/tokenomics_telemetry_audit.md` | AI usage during the build and runtime cost design. |
+| `docs/live_demonstration_guide.md` | Step-by-step demonstration script and Q&A sheet. |
+| `docs/migration_issue_log.md` | Issues encountered, root causes and resolutions. |
