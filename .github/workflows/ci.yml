@@ -45,7 +45,7 @@ jobs:
 
       - name: Execute Pytest Parity & Regression Suite
         run: |
-          pytest --cov=app --cov-report=term-missing tests/
+          PYTHONPATH=. pytest --cov=app --cov-report=term-missing tests/
 
   container-build:
     name: Docker Container Image Validation
