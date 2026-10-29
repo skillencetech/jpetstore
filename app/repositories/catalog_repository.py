@@ -8,9 +8,11 @@ from app.models.catalog import Category, Inventory, Item, Product
 from app.repositories.base import BaseRepository
 
 # In-memory selective cache dictionary per ADR-005
-_CATEGORY_CACHE = {}
-_PRODUCT_CACHE = {}
-_ITEM_CACHE = {}
+_CATEGORY_CACHE: dict[str, Category] = {}
+_CATEGORY_LIST_CACHE: list[Category] | None = None
+_PRODUCT_CACHE: dict[str, Product] = {}
+_PRODUCT_LIST_CACHE: dict[str, list[Product]] = {}
+_ITEM_CACHE: dict[str, Item] = {}
 
 
 class SearchCache:
@@ -50,12 +52,13 @@ class CatalogRepository(BaseRepository):
         return _SEARCH_CACHE
 
     async def get_category_list(self) -> list[Category]:
-        if "all" in _CATEGORY_CACHE:
-            return _CATEGORY_CACHE["all"]
+        global _CATEGORY_LIST_CACHE
+        if _CATEGORY_LIST_CACHE is not None:
+            return _CATEGORY_LIST_CACHE
         stmt = select(Category).order_by(Category.catid)
         result = await self.session.execute(stmt)
         categories = list(result.scalars().all())
-        _CATEGORY_CACHE["all"] = categories
+        _CATEGORY_LIST_CACHE = categories
         return categories
 
     async def get_category(self, catid: str) -> Category | None:
@@ -69,13 +72,12 @@ class CatalogRepository(BaseRepository):
         return category
 
     async def get_product_list_by_category(self, catid: str) -> list[Product]:
-        cache_key = f"cat_{catid}"
-        if cache_key in _PRODUCT_CACHE:
-            return _PRODUCT_CACHE[cache_key]
+        if catid in _PRODUCT_LIST_CACHE:
+            return _PRODUCT_LIST_CACHE[catid]
         stmt = select(Product).where(Product.category == catid).order_by(Product.productid)
         result = await self.session.execute(stmt)
         products = list(result.scalars().all())
-        _PRODUCT_CACHE[cache_key] = products
+        _PRODUCT_LIST_CACHE[catid] = products
         return products
 
     async def get_product(self, productid: str) -> Product | None:

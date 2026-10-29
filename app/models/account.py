@@ -33,6 +33,10 @@ class Account(Base):
         "Profile", back_populates="account", uselist=False, lazy="selectin"
     )
 
+    @property
+    def username(self) -> str:
+        return self.userid
+
 
 class Profile(Base):
     __tablename__ = "profile"

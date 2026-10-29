@@ -91,7 +91,7 @@ async def search_catalog(
 @router.get(
     "/get_item_details", response_model=ItemToolResponse, summary="Retrieve SKU Specs & Live Inventory (Query Param)"
 )
-async def get_item_details(item_id: str = None, db: AsyncSession = Depends(get_db)):
+async def get_item_details(item_id: str | None = None, db: AsyncSession = Depends(get_db)):
     """Retrieve detailed unit price, variant traits, and real-time stock balance."""
     if not item_id:
         raise HTTPException(status_code=400, detail="item_id is required")

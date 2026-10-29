@@ -28,7 +28,7 @@ class AccountService:
             try:
                 from passlib.hash import argon2
 
-                return argon2.verify(plain_password, stored_hash)
+                return bool(argon2.verify(plain_password, stored_hash))
             except Exception:
                 return False
         return False

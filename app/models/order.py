@@ -55,6 +55,10 @@ class Order(Base):
     def lineitems(self) -> list["LineItem"]:
         return self.line_items
 
+    @property
+    def orderstatus_rel(self) -> "OrderStatus | None":
+        return self.statuses[0] if self.statuses else None
+
 
 class OrderStatus(Base):
     __tablename__ = "orderstatus"

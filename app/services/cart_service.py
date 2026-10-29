@@ -1,4 +1,5 @@
 from decimal import Decimal
+from typing import Any, cast
 
 from app.models.catalog import Item
 
@@ -20,8 +21,11 @@ class CartItem:
 
 class CartService:
     @staticmethod
-    def get_cart_data(session: dict) -> dict[str, int]:
-        return session.get("cart", {})
+    def get_cart_data(session: dict[str, Any]) -> dict[str, int]:
+        cart = session.get("cart")
+        if isinstance(cart, dict):
+            return cast(dict[str, int], cart)
+        return {}
 
     @staticmethod
     def add_item(session: dict, item_id: str, quantity: int = 1):

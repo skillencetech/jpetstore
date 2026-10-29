@@ -56,11 +56,12 @@ async def update_cart(request: Request):
     for key, val in form.items():
         if key.startswith("qty_"):
             item_id = key.replace("qty_", "")
-            try:
-                qty = int(val)
-                CartService.set_quantity(request.session, item_id, qty)
-            except ValueError:
-                pass
+            if isinstance(val, str):
+                try:
+                    qty = int(val)
+                    CartService.set_quantity(request.session, item_id, qty)
+                except ValueError:
+                    pass
     return RedirectResponse(url="/cart", status_code=303)
 
 
