@@ -50,23 +50,30 @@ class AccountService:
         account = Account(
             userid=username,
             email=account_info.get("email", ""),
-            firstname=account_info.get("firstName", ""),
-            lastname=account_info.get("lastName", ""),
-            status="OK",
-            addr1=account_info.get("address1", ""),
-            addr2=account_info.get("address2", ""),
+            firstname=account_info.get("firstName") or account_info.get("firstname", ""),
+            lastname=account_info.get("lastName") or account_info.get("lastname", ""),
+            status=account_info.get("status", "OK"),
+            addr1=account_info.get("address1") or account_info.get("addr1", ""),
+            addr2=account_info.get("address2") or account_info.get("addr2", ""),
             city=account_info.get("city", ""),
             state=account_info.get("state", ""),
             zip=account_info.get("zip", ""),
             country=account_info.get("country", ""),
             phone=account_info.get("phone", ""),
         )
+        list_opt = profile_info.get("listOption") if "listOption" in profile_info else profile_info.get("mylistopt")
+        banner_opt = (
+            profile_info.get("bannerOption") if "bannerOption" in profile_info else profile_info.get("banneropt")
+        )
+        lang_pref = profile_info.get("languagePreference") or profile_info.get("langpref", "english")
+        fav_cat = profile_info.get("favouriteCategoryId") or profile_info.get("favcategory", "DOGS")
+
         profile = Profile(
             userid=username,
-            langpref=profile_info.get("languagePreference", "english"),
-            favcategory=profile_info.get("favouriteCategoryId", "DOGS"),
-            mylistopt=1 if profile_info.get("listOption") else 0,
-            banneropt=1 if profile_info.get("bannerOption") else 0,
+            langpref=lang_pref,
+            favcategory=fav_cat,
+            mylistopt=1 if list_opt else 0,
+            banneropt=1 if banner_opt else 0,
         )
         account.profile = profile
         await self.repo.insert_account(account, profile, signon)
@@ -79,10 +86,10 @@ class AccountService:
         if not account:
             raise ValueError("Account not found")
         account.email = account_info.get("email", account.email)
-        account.firstname = account_info.get("firstName", account.firstname)
-        account.lastname = account_info.get("lastName", account.lastname)
-        account.addr1 = account_info.get("address1", account.addr1)
-        account.addr2 = account_info.get("address2", account.addr2)
+        account.firstname = account_info.get("firstName") or account_info.get("firstname", account.firstname)
+        account.lastname = account_info.get("lastName") or account_info.get("lastname", account.lastname)
+        account.addr1 = account_info.get("address1") or account_info.get("addr1", account.addr1)
+        account.addr2 = account_info.get("address2") or account_info.get("addr2", account.addr2)
         account.city = account_info.get("city", account.city)
         account.state = account_info.get("state", account.state)
         account.zip = account_info.get("zip", account.zip)
@@ -91,10 +98,24 @@ class AccountService:
         await self.repo.update_account(account)
 
         if account.profile:
-            account.profile.langpref = profile_info.get("languagePreference", account.profile.langpref)
-            account.profile.favcategory = profile_info.get("favouriteCategoryId", account.profile.favcategory)
-            account.profile.mylistopt = 1 if profile_info.get("listOption") else 0
-            account.profile.banneropt = 1 if profile_info.get("bannerOption") else 0
+            account.profile.langpref = profile_info.get("languagePreference") or profile_info.get(
+                "langpref", account.profile.langpref
+            )
+            account.profile.favcategory = profile_info.get("favouriteCategoryId") or profile_info.get(
+                "favcategory", account.profile.favcategory
+            )
+            if "listOption" in profile_info or "mylistopt" in profile_info:
+                list_opt = (
+                    profile_info.get("listOption") if "listOption" in profile_info else profile_info.get("mylistopt")
+                )
+                account.profile.mylistopt = 1 if list_opt else 0
+            if "bannerOption" in profile_info or "banneropt" in profile_info:
+                banner_opt = (
+                    profile_info.get("bannerOption")
+                    if "bannerOption" in profile_info
+                    else profile_info.get("banneropt")
+                )
+                account.profile.banneropt = 1 if banner_opt else 0
             await self.repo.update_profile(account.profile)
 
         if password and password.strip():

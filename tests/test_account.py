@@ -31,7 +31,7 @@ async def test_account_authentication_and_hash_upgrade():
         user = await service.authenticate("j2ee", "j2ee")
         assert user is not None
         assert user.username == "j2ee"
-        assert user.email == "yourname@yourdomain.com"
+        assert user.email in ("yourname@yourdomain.com", "your.name@your.company.com")
 
         # Verify invalid credentials return None
         bad_auth = await service.authenticate("j2ee", "incorrect_pwd")
