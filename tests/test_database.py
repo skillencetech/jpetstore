@@ -1,6 +1,8 @@
 import pytest
 from sqlalchemy import text
+
 from app.database import engine, init_db
+
 
 @pytest.mark.asyncio
 async def test_database_initialization():

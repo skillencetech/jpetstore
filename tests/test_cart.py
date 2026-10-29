@@ -1,10 +1,12 @@
-import pytest
 from decimal import Decimal
-from unittest.mock import MagicMock
-from app.services.cart_service import CartService, CartItem
-from app.models.catalog import Item, Product, Inventory
 
-def create_mock_item(item_id: str, product_id: str, list_price: float, qty: int = 10, attr1: str = "Adult Male") -> Item:
+from app.models.catalog import Inventory, Item, Product
+from app.services.cart_service import CartItem, CartService
+
+
+def create_mock_item(
+    item_id: str, product_id: str, list_price: float, qty: int = 10, attr1: str = "Adult Male"
+) -> Item:
     item = Item(
         itemid=item_id,
         productid=product_id,
@@ -12,13 +14,14 @@ def create_mock_item(item_id: str, product_id: str, list_price: float, qty: int 
         unitcost=Decimal("10.00"),
         supplier=1,
         status="P",
-        attr1=attr1
+        attr1=attr1,
     )
     product = Product(productid=product_id, category="FISH", name="Angelfish", descn="Saltwater fish")
     inv = Inventory(itemid=item_id, qty=qty)
     item.product_rel = product
     item.inventory = inv
     return item
+
 
 def test_cart_item_properties():
     item = create_mock_item("EST-1", "FI-SW-01", 16.50, qty=5, attr1="Large")
@@ -31,6 +34,7 @@ def test_cart_item_properties():
     assert cart_item.total == Decimal("33.00")
     assert cart_item.in_stock is True
     assert "Large" in cart_item.description
+
 
 def test_cart_service_stateless_session_flow():
     session = {}
@@ -64,13 +68,14 @@ def test_cart_service_stateless_session_flow():
     CartService.clear_cart(session)
     assert session["cart"] == {}
 
+
 def test_cart_subtotal_calculation():
     item1 = create_mock_item("EST-1", "FI-SW-01", 10.50)
     item2 = create_mock_item("EST-2", "FI-SW-02", 5.25)
 
     cart_items = [
-        CartItem(item=item1, quantity=2), # 21.00
-        CartItem(item=item2, quantity=4)  # 21.00
+        CartItem(item=item1, quantity=2),  # 21.00
+        CartItem(item=item2, quantity=4),  # 21.00
     ]
 
     subtotal = CartService.calculate_subtotal(cart_items)

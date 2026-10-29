@@ -1,5 +1,6 @@
 from fastapi.templating import Jinja2Templates
-from app.i18n import gettext_context, gettext
+
+from app.i18n import gettext, gettext_context
 
 templates = Jinja2Templates(directory="app/templates")
 

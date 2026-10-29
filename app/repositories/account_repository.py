@@ -1,20 +1,17 @@
-from typing import Optional
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
+
+from app.models.account import Account, BannerData, Profile, Signon
 from app.repositories.base import BaseRepository
-from app.models.account import Account, Profile, Signon, BannerData
+
 
 class AccountRepository(BaseRepository):
-    async def get_account(self, username: str) -> Optional[Account]:
-        stmt = (
-            select(Account)
-            .where(Account.userid == username)
-            .options(selectinload(Account.profile))
-        )
+    async def get_account(self, username: str) -> Account | None:
+        stmt = select(Account).where(Account.userid == username).options(selectinload(Account.profile))
         result = await self.session.execute(stmt)
         return result.scalar_one_or_none()
 
-    async def get_signon(self, username: str) -> Optional[Signon]:
+    async def get_signon(self, username: str) -> Signon | None:
         stmt = select(Signon).where(Signon.username == username)
         result = await self.session.execute(stmt)
         return result.scalar_one_or_none()
@@ -37,7 +34,7 @@ class AccountRepository(BaseRepository):
         await self.session.merge(signon)
         await self.session.flush()
 
-    async def get_banner_data(self, favcategory: str) -> Optional[BannerData]:
+    async def get_banner_data(self, favcategory: str) -> BannerData | None:
         stmt = select(BannerData).where(BannerData.favcategory == favcategory)
         result = await self.session.execute(stmt)
         return result.scalar_one_or_none()

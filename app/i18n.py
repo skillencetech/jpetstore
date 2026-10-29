@@ -4,14 +4,16 @@ Standardized Internationalization (i18n) and Localization (l10n) Engine.
 - Uses BCP 47 and ISO 639-1 language tags ('en', 'ja').
 - Implements standard W3C / RFC 9110 Accept-Language negotiation hierarchy.
 """
-from typing import Optional, Dict, Any
+
+from typing import Any
+
 from jinja2 import pass_context
 
 SUPPORTED_LOCALES = {"en": "English", "ja": "Japanese"}
 DEFAULT_LOCALE = "en"
 
 # ISO 639-1 / BCP 47 normalization map with backward-compatibility for legacy DB strings
-LOCALE_MAP: Dict[str, str] = {
+LOCALE_MAP: dict[str, str] = {
     "english": "en",
     "en": "en",
     "en-us": "en",
@@ -19,10 +21,11 @@ LOCALE_MAP: Dict[str, str] = {
     "japanese": "ja",
     "ja": "ja",
     "ja-jp": "ja",
-    "ja_jp": "ja"
+    "ja_jp": "ja",
 }
 
-def normalize_locale(locale_str: Optional[str]) -> str:
+
+def normalize_locale(locale_str: str | None) -> str:
     """Normalize input locale to standard ISO 639-1 tag."""
     if not locale_str:
         return DEFAULT_LOCALE
@@ -32,8 +35,9 @@ def normalize_locale(locale_str: Optional[str]) -> str:
     primary_subtag = clean.split("-")[0].split("_")[0]
     return LOCALE_MAP.get(primary_subtag, DEFAULT_LOCALE)
 
+
 # Structured message catalog (extensible for de, fr, es, etc.)
-MESSAGES: Dict[str, Dict[str, str]] = {
+MESSAGES: dict[str, dict[str, str]] = {
     "ja": {
         # Header & Navigation
         "Sign In": "サインイン",
@@ -48,7 +52,6 @@ MESSAGES: Dict[str, Dict[str, str]] = {
         "Reptiles": "爬虫類",
         "Cats": "猫",
         "Birds": "鳥",
-
         # Cart
         "Shopping Cart": "ショッピングカート",
         "Item ID": "商品ID",
@@ -65,7 +68,6 @@ MESSAGES: Dict[str, Dict[str, str]] = {
         "Proceed to Checkout": "チェックアウトに進む",
         "Pet Favorites": "お気に入りのペット",
         "Shop for more of your favorite pets here.": "お気に入りのペットをここでお買い物できます。",
-
         # Account
         "User ID:": "ユーザーID:",
         "New password:": "新しいパスワード:",
@@ -91,7 +93,6 @@ MESSAGES: Dict[str, Dict[str, str]] = {
         "My Orders": "注文履歴",
         "User Registration": "新規ユーザー登録",
         "Edit Account": "アカウント編集",
-
         # Orders & Checkout
         "Payment Details": "お支払い情報",
         "Billing Address": "請求先住所",
@@ -111,7 +112,6 @@ MESSAGES: Dict[str, Dict[str, str]] = {
         "Submit": "注文を確定する",
         "Thank you, your order has been submitted.": "ご注文ありがとうございました。注文が完了しました。",
         "Order Details": "注文詳細",
-
         # Catalog & Products
         "Product": "商品",
         "Name": "名称",
@@ -121,16 +121,16 @@ MESSAGES: Dict[str, Dict[str, str]] = {
         "Add to Cart": "カートに追加",
         "Back": "戻る",
         "Semantic Search": "セマンティック検索",
-
         # AI Advisor
         "AI Pet Advisor": "AIペットアドバイザー",
         "Smart Pet Advisor": "スマートペットアドバイザー",
         "Ask": "質問する",
-        "Ask about pet care or diet...": "ペットのケアや食事について質問..."
+        "Ask about pet care or diet...": "ペットのケアや食事について質問...",
     }
 }
 
-def resolve_locale(context: Optional[dict] = None, request: Any = None) -> str:
+
+def resolve_locale(context: dict | None = None, request: Any = None) -> str:
     """
     Standard RFC 9110 / W3C Locale Negotiation Hierarchy:
     1. Authenticated user preference in context / session
@@ -165,20 +165,24 @@ def resolve_locale(context: Optional[dict] = None, request: Any = None) -> str:
 
     return DEFAULT_LOCALE
 
+
 def gettext(text: str, locale: str = DEFAULT_LOCALE) -> str:
     """Standard GNU gettext lookup."""
     norm = normalize_locale(locale)
     catalog = MESSAGES.get(norm, {})
     return catalog.get(text, text)
 
+
 # Aliases for gettext
 _ = gettext
 translate_text = gettext
 
+
 @pass_context
-def gettext_context(context: dict, text: str, locale: Optional[str] = None) -> str:
+def gettext_context(context: dict, text: str, locale: str | None = None) -> str:
     """Context-aware gettext for Jinja2 templates resolving active locale."""
     active_locale = locale or resolve_locale(context)
     return gettext(text, active_locale)
+
 
 t_context = gettext_context

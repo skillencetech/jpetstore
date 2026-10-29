@@ -3,14 +3,15 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
-from app.repositories.catalog_repository import CatalogRepository
 from app.repositories.account_repository import AccountRepository
-from app.services.catalog_service import CatalogService
+from app.repositories.catalog_repository import CatalogRepository
 from app.services.account_service import AccountService
-from app.services.cart_service import CartService, CartItem
+from app.services.cart_service import CartItem, CartService
+from app.services.catalog_service import CatalogService
+from app.templates_config import templates
 
 router = APIRouter()
-from app.templates_config import templates
+
 
 @router.get("/cart", response_class=HTMLResponse)
 async def view_cart(request: Request, db: AsyncSession = Depends(get_db)):
@@ -39,18 +40,15 @@ async def view_cart(request: Request, db: AsyncSession = Depends(get_db)):
     return templates.TemplateResponse(
         request=request,
         name="cart/cart.html",
-        context={
-            "cart_items": cart_items,
-            "subtotal": subtotal,
-            "user": user,
-            "my_list": my_list
-        }
+        context={"cart_items": cart_items, "subtotal": subtotal, "user": user, "my_list": my_list},
     )
+
 
 @router.post("/cart/items/{item_id}")
 async def add_to_cart(request: Request, item_id: str):
     CartService.add_item(request.session, item_id, 1)
     return RedirectResponse(url="/cart", status_code=303)
+
 
 @router.post("/cart/update")
 async def update_cart(request: Request):
@@ -64,6 +62,7 @@ async def update_cart(request: Request):
             except ValueError:
                 pass
     return RedirectResponse(url="/cart", status_code=303)
+
 
 @router.get("/cart/items/{item_id}/remove")
 async def remove_from_cart(request: Request, item_id: str):

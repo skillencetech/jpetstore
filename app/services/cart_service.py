@@ -1,6 +1,7 @@
 from decimal import Decimal
-from typing import Dict, Any, List
+
 from app.models.catalog import Item
+
 
 class CartItem:
     def __init__(self, item: Item, quantity: int = 1):
@@ -16,9 +17,10 @@ class CartItem:
     def total(self) -> Decimal:
         return self.list_price * self.quantity
 
+
 class CartService:
     @staticmethod
-    def get_cart_data(session: dict) -> Dict[str, int]:
+    def get_cart_data(session: dict) -> dict[str, int]:
         return session.get("cart", {})
 
     @staticmethod
@@ -47,5 +49,5 @@ class CartService:
         session["cart"] = {}
 
     @staticmethod
-    def calculate_subtotal(cart_items: List[CartItem]) -> Decimal:
+    def calculate_subtotal(cart_items: list[CartItem]) -> Decimal:
         return sum((item.total for item in cart_items), Decimal("0.00"))

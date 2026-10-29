@@ -1,7 +1,9 @@
 import pytest
+
 from app.database import AsyncSessionLocal, init_db
 from app.repositories.account_repository import AccountRepository
 from app.services.account_service import AccountService
+
 
 @pytest.mark.asyncio
 async def test_account_password_hashing_and_verification():
@@ -17,6 +19,7 @@ async def test_account_password_hashing_and_verification():
 
         # Legacy plaintext compatibility
         assert service.verify_password("j2ee", "j2ee") is True
+
 
 @pytest.mark.asyncio
 async def test_account_authentication_and_hash_upgrade():
@@ -36,6 +39,7 @@ async def test_account_authentication_and_hash_upgrade():
 
         non_existent = await service.authenticate("nonexistent_user", "password")
         assert non_existent is None
+
 
 @pytest.mark.asyncio
 async def test_account_registration_and_profile():
@@ -61,20 +65,12 @@ async def test_account_registration_and_profile():
             "state": "CA",
             "zip": "94016",
             "country": "USA",
-            "phone": "555-0199"
+            "phone": "555-0199",
         }
-        profile_info = {
-            "langpref": "english",
-            "favcategory": "DOGS",
-            "mylistopt": True,
-            "banneropt": True
-        }
+        profile_info = {"langpref": "english", "favcategory": "DOGS", "mylistopt": True, "banneropt": True}
 
         created = await service.register_account(
-            username=test_username,
-            password="SecurePass2026!",
-            account_info=account_info,
-            profile_info=profile_info
+            username=test_username, password="SecurePass2026!", account_info=account_info, profile_info=profile_info
         )
         assert created.username == test_username
         assert created.email == "test_eval@example.com"

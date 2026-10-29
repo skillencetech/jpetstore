@@ -1,16 +1,19 @@
 from datetime import date
 from decimal import Decimal
-from typing import Optional, List
-from sqlalchemy import String, Integer, Numeric, Date, ForeignKey
+
+from sqlalchemy import Date, ForeignKey, Integer, Numeric, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+
 from app.database import Base
 from app.models.catalog import Item
+
 
 class Sequence(Base):
     __tablename__ = "sequence"
 
     name: Mapped[str] = mapped_column(String(30), primary_key=True)
     nextid: Mapped[int] = mapped_column(Integer, nullable=False)
+
 
 class Order(Base):
     __tablename__ = "orders"
@@ -19,13 +22,13 @@ class Order(Base):
     userid: Mapped[str] = mapped_column(String(80), ForeignKey("account.userid"), nullable=False)
     orderdate: Mapped[date] = mapped_column(Date, nullable=False)
     shipaddr1: Mapped[str] = mapped_column(String(80), nullable=False)
-    shipaddr2: Mapped[Optional[str]] = mapped_column(String(80), nullable=True)
+    shipaddr2: Mapped[str | None] = mapped_column(String(80), nullable=True)
     shipcity: Mapped[str] = mapped_column(String(80), nullable=False)
     shipstate: Mapped[str] = mapped_column(String(80), nullable=False)
     shipzip: Mapped[str] = mapped_column(String(20), nullable=False)
     shipcountry: Mapped[str] = mapped_column(String(20), nullable=False)
     billaddr1: Mapped[str] = mapped_column(String(80), nullable=False)
-    billaddr2: Mapped[Optional[str]] = mapped_column(String(80), nullable=True)
+    billaddr2: Mapped[str | None] = mapped_column(String(80), nullable=True)
     billcity: Mapped[str] = mapped_column(String(80), nullable=False)
     billstate: Mapped[str] = mapped_column(String(80), nullable=False)
     billzip: Mapped[str] = mapped_column(String(20), nullable=False)
@@ -41,12 +44,17 @@ class Order(Base):
     cardtype: Mapped[str] = mapped_column(String(80), nullable=False)
     locale: Mapped[str] = mapped_column(String(80), nullable=False)
 
-    line_items: Mapped[List["LineItem"]] = relationship("LineItem", back_populates="order_rel", cascade="all, delete-orphan", lazy="selectin")
-    statuses: Mapped[List["OrderStatus"]] = relationship("OrderStatus", back_populates="order_rel", cascade="all, delete-orphan", lazy="selectin")
+    line_items: Mapped[list["LineItem"]] = relationship(
+        "LineItem", back_populates="order_rel", cascade="all, delete-orphan", lazy="selectin"
+    )
+    statuses: Mapped[list["OrderStatus"]] = relationship(
+        "OrderStatus", back_populates="order_rel", cascade="all, delete-orphan", lazy="selectin"
+    )
 
     @property
-    def lineitems(self) -> List["LineItem"]:
+    def lineitems(self) -> list["LineItem"]:
         return self.line_items
+
 
 class OrderStatus(Base):
     __tablename__ = "orderstatus"
@@ -58,6 +66,7 @@ class OrderStatus(Base):
 
     order_rel: Mapped["Order"] = relationship("Order", back_populates="statuses")
 
+
 class LineItem(Base):
     __tablename__ = "lineitem"
 
@@ -68,4 +77,4 @@ class LineItem(Base):
     unitprice: Mapped[Decimal] = mapped_column(Numeric(10, 2), nullable=False)
 
     order_rel: Mapped["Order"] = relationship("Order", back_populates="line_items")
-    item_rel: Mapped[Optional[Item]] = relationship("Item", foreign_keys=[itemid], lazy="selectin")
+    item_rel: Mapped[Item | None] = relationship("Item", foreign_keys=[itemid], lazy="selectin")

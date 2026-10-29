@@ -1,9 +1,10 @@
-from typing import List, Optional
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
+
+from app.models.catalog import Inventory, Item
+from app.models.order import LineItem, Order, OrderStatus, Sequence
 from app.repositories.base import BaseRepository
-from app.models.order import Order, OrderStatus, LineItem, Sequence
-from app.models.catalog import Inventory, Item, Product
+
 
 class OrderRepository(BaseRepository):
     async def get_next_order_id(self) -> int:
@@ -41,25 +42,25 @@ class OrderRepository(BaseRepository):
         await self.session.flush()
         return True
 
-    async def get_order(self, orderid: int) -> Optional[Order]:
+    async def get_order(self, orderid: int) -> Order | None:
         stmt = (
             select(Order)
             .where(Order.orderid == orderid)
             .options(
                 selectinload(Order.statuses),
-                selectinload(Order.line_items).selectinload(LineItem.item_rel).selectinload(Item.product_rel)
+                selectinload(Order.line_items).selectinload(LineItem.item_rel).selectinload(Item.product_rel),
             )
         )
         result = await self.session.execute(stmt)
         return result.scalar_one_or_none()
 
-    async def get_orders_by_username(self, username: str) -> List[Order]:
+    async def get_orders_by_username(self, username: str) -> list[Order]:
         stmt = (
             select(Order)
             .where(Order.userid == username)
             .options(
                 selectinload(Order.statuses),
-                selectinload(Order.line_items).selectinload(LineItem.item_rel).selectinload(Item.product_rel)
+                selectinload(Order.line_items).selectinload(LineItem.item_rel).selectinload(Item.product_rel),
             )
             .order_by(Order.orderdate.desc())
         )

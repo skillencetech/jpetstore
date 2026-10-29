@@ -1,27 +1,27 @@
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from sqlalchemy.ext.asyncio import AsyncSession
-import os
 
 from app.database import get_db
 from app.repositories.catalog_repository import CatalogRepository
-from app.services.catalog_service import CatalogService
 from app.services.ai_service import AIService
+from app.services.catalog_service import CatalogService
+from app.templates_config import templates
 
 router = APIRouter()
-from app.templates_config import templates
+
 
 @router.get("/", response_class=HTMLResponse)
 async def root():
     return RedirectResponse(url="/catalog")
 
+
 @router.get("/catalog", response_class=HTMLResponse)
 async def catalog_main(request: Request):
     return templates.TemplateResponse(
-        request=request,
-        name="catalog/main.html",
-        context={"user": request.session.get("user")}
+        request=request, name="catalog/main.html", context={"user": request.session.get("user")}
     )
+
 
 @router.get("/catalog/categories/{category_id}", response_class=HTMLResponse)
 async def view_category(request: Request, category_id: str, db: AsyncSession = Depends(get_db)):
@@ -31,8 +31,9 @@ async def view_category(request: Request, category_id: str, db: AsyncSession = D
     return templates.TemplateResponse(
         request=request,
         name="catalog/category.html",
-        context={"category": category, "product_list": product_list, "user": request.session.get("user")}
+        context={"category": category, "product_list": product_list, "user": request.session.get("user")},
     )
+
 
 @router.get("/catalog/products/{product_id}", response_class=HTMLResponse)
 async def view_product(request: Request, product_id: str, db: AsyncSession = Depends(get_db)):
@@ -42,8 +43,9 @@ async def view_product(request: Request, product_id: str, db: AsyncSession = Dep
     return templates.TemplateResponse(
         request=request,
         name="catalog/product.html",
-        context={"product": product, "item_list": item_list, "user": request.session.get("user")}
+        context={"product": product, "item_list": item_list, "user": request.session.get("user")},
     )
+
 
 @router.get("/catalog/items/{item_id}", response_class=HTMLResponse)
 async def view_item(request: Request, item_id: str, db: AsyncSession = Depends(get_db)):
@@ -53,8 +55,9 @@ async def view_item(request: Request, item_id: str, db: AsyncSession = Depends(g
     return templates.TemplateResponse(
         request=request,
         name="catalog/item.html",
-        context={"item": item, "in_stock": in_stock, "user": request.session.get("user")}
+        context={"item": item, "in_stock": in_stock, "user": request.session.get("user")},
     )
+
 
 @router.get("/catalog/search", response_class=HTMLResponse)
 async def search(request: Request, keywords: str = "", db: AsyncSession = Depends(get_db)):
@@ -87,6 +90,6 @@ async def search(request: Request, keywords: str = "", db: AsyncSession = Depend
             "product_list": product_list,
             "keywords": keywords,
             "is_semantic": is_semantic,
-            "user": request.session.get("user")
-        }
+            "user": request.session.get("user"),
+        },
     )

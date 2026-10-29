@@ -1,7 +1,9 @@
 import pytest
-from httpx import AsyncClient, ASGITransport
-from app.main import app
+from httpx import ASGITransport, AsyncClient
+
 from app.database import init_db
+from app.main import app
+
 
 @pytest.mark.asyncio
 async def test_tools_search_catalog():
@@ -22,6 +24,7 @@ async def test_tools_search_catalog():
         data_sem = response_sem.json()
         assert isinstance(data_sem, list)
         assert len(data_sem) > 0
+
 
 @pytest.mark.asyncio
 async def test_tools_item_details_and_stock():
@@ -49,15 +52,13 @@ async def test_tools_item_details_and_stock():
         res_404 = await client.get("/api/v1/tools/item/NONEXISTENT-999")
         assert res_404.status_code == 404
 
+
 @pytest.mark.asyncio
 async def test_tools_calculate_order_quote():
     await init_db()
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://testserver") as client:
-        quote_payload = [
-            {"item_id": "EST-1", "quantity": 2},
-            {"item_id": "EST-2", "quantity": 1}
-        ]
+        quote_payload = [{"item_id": "EST-1", "quantity": 2}, {"item_id": "EST-2", "quantity": 1}]
         res = await client.post("/api/v1/tools/calculate_order_quote", json=quote_payload)
         assert res.status_code == 200
         data = res.json()
@@ -67,6 +68,7 @@ async def test_tools_calculate_order_quote():
         assert "grand_total" in data
         assert len(data["items"]) == 2
         assert data["grand_total"] == round(data["subtotal"] + data["estimated_tax"] + data["shipping_cost"], 2)
+
 
 @pytest.mark.asyncio
 async def test_tools_advisor_recommendations():

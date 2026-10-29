@@ -1,7 +1,9 @@
 import pytest
+
 from app.database import AsyncSessionLocal, init_db
 from app.repositories.catalog_repository import CatalogRepository
 from app.services.catalog_service import CatalogService
+
 
 @pytest.mark.asyncio
 async def test_catalog_service():
@@ -26,4 +28,3 @@ async def test_catalog_service():
         # Inventory stock check
         in_stock = await service.is_item_in_stock("EST-1")
         assert isinstance(in_stock, bool)
-

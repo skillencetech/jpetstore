@@ -1,30 +1,24 @@
-from datetime import date
-from decimal import Decimal
-from fastapi import APIRouter, Depends, Request, Form, HTTPException
+from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
-from app.repositories.catalog_repository import CatalogRepository
-from app.repositories.order_repository import OrderRepository
-from app.repositories.account_repository import AccountRepository
-from app.services.catalog_service import CatalogService
-from app.services.order_service import OrderService, OutOfStockException
-from app.services.account_service import AccountService
-from app.services.cart_service import CartService, CartItem
 from app.dependencies.auth import get_current_active_user
 from app.models.account import Account
+from app.repositories.catalog_repository import CatalogRepository
+from app.repositories.order_repository import OrderRepository
+from app.services.cart_service import CartItem, CartService
+from app.services.catalog_service import CatalogService
+from app.services.order_service import OrderService, OutOfStockException
+from app.templates_config import templates
 
 router = APIRouter()
-from app.templates_config import templates
 
 CREDIT_CARD_TYPES = ["Visa", "MasterCard", "American Express"]
 
+
 @router.get("/order/newOrderForm", response_class=HTMLResponse)
-async def new_order_form(
-    request: Request,
-    current_user: Account = Depends(get_current_active_user)
-):
+async def new_order_form(request: Request, current_user: Account = Depends(get_current_active_user)):
     cart_data = CartService.get_cart_data(request.session)
     if not cart_data:
         return RedirectResponse(url="/cart", status_code=303)
@@ -32,12 +26,9 @@ async def new_order_form(
     return templates.TemplateResponse(
         request=request,
         name="order/new_order_form.html",
-        context={
-            "account": current_user,
-            "creditCardTypes": CREDIT_CARD_TYPES,
-            "user": request.session.get("user")
-        }
+        context={"account": current_user, "creditCardTypes": CREDIT_CARD_TYPES, "user": request.session.get("user")},
     )
+
 
 @router.post("/order/new")
 async def process_new_order(
@@ -54,7 +45,7 @@ async def process_new_order(
     billZip: str = Form(...),
     billCountry: str = Form(...),
     shippingAddressRequired: bool = Form(False),
-    current_user: Account = Depends(get_current_active_user)
+    current_user: Account = Depends(get_current_active_user),
 ):
     pending_order = {
         "cardType": cardType,
@@ -77,7 +68,7 @@ async def process_new_order(
         "shipState": billState,
         "shipZip": billZip,
         "shipCountry": billCountry,
-        "courier": "UPS"
+        "courier": "UPS",
     }
     request.session["pending_order"] = pending_order
 
@@ -85,11 +76,9 @@ async def process_new_order(
         return RedirectResponse(url="/order/shippingForm", status_code=303)
     return RedirectResponse(url="/order/confirmOrder", status_code=303)
 
+
 @router.get("/order/shippingForm", response_class=HTMLResponse)
-async def shipping_form(
-    request: Request,
-    current_user: Account = Depends(get_current_active_user)
-):
+async def shipping_form(request: Request, current_user: Account = Depends(get_current_active_user)):
     pending_order = request.session.get("pending_order")
     if not pending_order:
         return RedirectResponse(url="/order/newOrderForm", status_code=303)
@@ -97,8 +86,9 @@ async def shipping_form(
     return templates.TemplateResponse(
         request=request,
         name="order/shipping_form.html",
-        context={"order": pending_order, "user": request.session.get("user")}
+        context={"order": pending_order, "user": request.session.get("user")},
     )
+
 
 @router.post("/order/shipping")
 async def process_shipping(
@@ -110,7 +100,7 @@ async def process_shipping(
     shipCity: str = Form(...),
     shipState: str = Form(...),
     shipZip: str = Form(...),
-    shipCountry: str = Form(...)
+    shipCountry: str = Form(...),
 ):
     pending_order = request.session.get("pending_order", {})
     pending_order["shipToFirstName"] = shipToFirstName
@@ -125,11 +115,10 @@ async def process_shipping(
 
     return RedirectResponse(url="/order/confirmOrder", status_code=303)
 
+
 @router.get("/order/confirmOrder", response_class=HTMLResponse)
 async def confirm_order(
-    request: Request,
-    db: AsyncSession = Depends(get_db),
-    current_user: Account = Depends(get_current_active_user)
+    request: Request, db: AsyncSession = Depends(get_db), current_user: Account = Depends(get_current_active_user)
 ):
     pending_order = request.session.get("pending_order")
     if not pending_order:
@@ -151,15 +140,14 @@ async def confirm_order(
             "order": pending_order,
             "cart_items": cart_items,
             "subtotal": subtotal,
-            "user": request.session.get("user")
-        }
+            "user": request.session.get("user"),
+        },
     )
+
 
 @router.post("/order/confirm")
 async def submit_order(
-    request: Request,
-    db: AsyncSession = Depends(get_db),
-    current_user: Account = Depends(get_current_active_user)
+    request: Request, db: AsyncSession = Depends(get_db), current_user: Account = Depends(get_current_active_user)
 ):
     pending_order = request.session.get("pending_order")
     if not pending_order:
@@ -204,7 +192,7 @@ async def submit_order(
             expr_date=pending_order["expiryDate"],
             card_type=pending_order["cardType"],
             courier=pending_order.get("courier", "UPS"),
-            locale="en_US"
+            locale="en_US",
         )
         await db.commit()
 
@@ -223,16 +211,17 @@ async def submit_order(
                 "cart_items": cart_items,
                 "subtotal": CartService.calculate_subtotal(cart_items),
                 "error": str(e),
-                "user": user
-            }
+                "user": request.session.get("user"),
+            },
         )
+
 
 @router.get("/order/viewOrder/{order_id}", response_class=HTMLResponse)
 async def view_order(
     request: Request,
     order_id: int,
     db: AsyncSession = Depends(get_db),
-    current_user: Account = Depends(get_current_active_user)
+    current_user: Account = Depends(get_current_active_user),
 ):
     order_service = OrderService(OrderRepository(db))
     order = await order_service.get_order(order_id)
@@ -243,36 +232,29 @@ async def view_order(
     if order.userid != current_user.username:
         raise HTTPException(
             status_code=403,
-            detail="Access Denied: You do not have authorization to view transactional details for this order."
+            detail="Access Denied: You do not have authorization to view transactional details for this order.",
         )
 
     return templates.TemplateResponse(
-        request=request,
-        name="order/view_order.html",
-        context={"order": order, "user": request.session.get("user")}
+        request=request, name="order/view_order.html", context={"order": order, "user": request.session.get("user")}
     )
+
 
 @router.get("/order/list", response_class=HTMLResponse)
 async def list_orders(
-    request: Request,
-    db: AsyncSession = Depends(get_db),
-    current_user: Account = Depends(get_current_active_user)
+    request: Request, db: AsyncSession = Depends(get_db), current_user: Account = Depends(get_current_active_user)
 ):
     order_service = OrderService(OrderRepository(db))
     orders = await order_service.get_orders_by_username(current_user.username)
 
     return templates.TemplateResponse(
-        request=request,
-        name="order/list_orders.html",
-        context={"orders": orders, "user": request.session.get("user")}
+        request=request, name="order/list_orders.html", context={"orders": orders, "user": request.session.get("user")}
     )
+
 
 # Hardened Transactional REST API Endpoints
 @router.get("/api/v1/orders", summary="Get Authenticated User Order History")
-async def api_get_orders(
-    db: AsyncSession = Depends(get_db),
-    current_user: Account = Depends(get_current_active_user)
-):
+async def api_get_orders(db: AsyncSession = Depends(get_db), current_user: Account = Depends(get_current_active_user)):
     order_service = OrderService(OrderRepository(db))
     orders = await order_service.get_orders_by_username(current_user.username)
     return [
@@ -280,23 +262,24 @@ async def api_get_orders(
             "order_id": o.orderid,
             "order_date": o.orderdate.isoformat() if hasattr(o.orderdate, "isoformat") else str(o.orderdate),
             "total_price": float(o.totalprice),
-            "status": o.orderstatus_rel.status if o.orderstatus_rel else "P"
+            "status": o.orderstatus_rel.status if o.orderstatus_rel else "P",
         }
         for o in orders
     ]
 
+
 @router.get("/api/v1/orders/{order_id}", summary="Get Hardened Order Transaction Details")
 async def api_get_order_detail(
-    order_id: int,
-    db: AsyncSession = Depends(get_db),
-    current_user: Account = Depends(get_current_active_user)
+    order_id: int, db: AsyncSession = Depends(get_db), current_user: Account = Depends(get_current_active_user)
 ):
     order_service = OrderService(OrderRepository(db))
     order = await order_service.get_order(order_id)
     if not order:
         raise HTTPException(status_code=404, detail="Order not found.")
     if order.userid != current_user.username:
-        raise HTTPException(status_code=403, detail="Access Denied: You cannot inspect orders belonging to another user.")
+        raise HTTPException(
+            status_code=403, detail="Access Denied: You cannot inspect orders belonging to another user."
+        )
     return {
         "order_id": order.orderid,
         "userid": order.userid,
@@ -313,8 +296,10 @@ async def api_get_order_detail(
                 "item_id": li.itemid,
                 "quantity": li.quantity,
                 "unit_price": float(li.unitprice),
-                "product_name": li.item_rel.product_rel.name if (li.item_rel and li.item_rel.product_rel) else li.itemid
+                "product_name": li.item_rel.product_rel.name
+                if (li.item_rel and li.item_rel.product_rel)
+                else li.itemid,
             }
             for li in order.line_items
-        ]
+        ],
     }

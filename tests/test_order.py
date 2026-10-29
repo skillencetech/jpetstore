@@ -1,11 +1,12 @@
 import pytest
-from decimal import Decimal
+
 from app.database import AsyncSessionLocal, init_db
-from app.repositories.order_repository import OrderRepository
 from app.repositories.catalog_repository import CatalogRepository
-from app.services.order_service import OrderService, OutOfStockException
-from app.services.catalog_service import CatalogService
+from app.repositories.order_repository import OrderRepository
 from app.services.cart_service import CartItem
+from app.services.catalog_service import CatalogService
+from app.services.order_service import OrderService, OutOfStockException
+
 
 @pytest.mark.asyncio
 async def test_order_creation_and_inventory_decrement():
@@ -31,7 +32,7 @@ async def test_order_creation_and_inventory_decrement():
             "city": "Boston",
             "state": "MA",
             "zip": "02101",
-            "country": "USA"
+            "country": "USA",
         }
         ship_info = bill_info.copy()
 
@@ -43,7 +44,7 @@ async def test_order_creation_and_inventory_decrement():
             credit_card="9999999999999999",
             expr_date="12/28",
             card_type="Visa",
-            courier="UPS"
+            courier="UPS",
         )
 
         assert order.orderid > 0
@@ -61,6 +62,7 @@ async def test_order_creation_and_inventory_decrement():
         assert len(fetched_order.line_items) == 1
         assert fetched_order.line_items[0].itemid == "EST-1"
         assert fetched_order.line_items[0].quantity == 2
+
 
 @pytest.mark.asyncio
 async def test_order_out_of_stock_exception():
@@ -86,5 +88,5 @@ async def test_order_out_of_stock_exception():
                 ship_info=bill_info,
                 credit_card="1111222233334444",
                 expr_date="01/29",
-                card_type="MasterCard"
+                card_type="MasterCard",
             )

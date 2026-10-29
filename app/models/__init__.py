@@ -1,6 +1,6 @@
-from app.models.catalog import Supplier, Category, Product, Item, Inventory
-from app.models.account import Signon, Account, Profile, BannerData
-from app.models.order import Sequence, Order, OrderStatus, LineItem
+from app.models.account import Account, BannerData, Profile, Signon
+from app.models.catalog import Category, Inventory, Item, Product, Supplier
+from app.models.order import LineItem, Order, OrderStatus, Sequence
 
 __all__ = [
     "Supplier",

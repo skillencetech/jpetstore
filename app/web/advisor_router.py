@@ -4,23 +4,19 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
 from app.repositories.catalog_repository import CatalogRepository
-from app.services.catalog_service import CatalogService
-from app.services.cart_service import CartService
 from app.services.ai_service import AIService
+from app.services.cart_service import CartService
+from app.services.catalog_service import CatalogService
 
 router = APIRouter(prefix="/advisor", tags=["Pet Advisor Web"])
 
-class ChatRequest(BaseModel):
-    message: Optional[str] = ""
 
-from typing import Optional
+class ChatRequest(BaseModel):
+    message: str | None = ""
+
 
 @router.get("/cart_insights")
-async def get_cart_insights(
-    request: Request,
-    category: Optional[str] = None,
-    db: AsyncSession = Depends(get_db)
-):
+async def get_cart_insights(request: Request, category: str | None = None, db: AsyncSession = Depends(get_db)):
     user = request.session.get("user")
     user_favcategory = user.get("favcategory") if user and isinstance(user, dict) else None
 
@@ -49,6 +45,7 @@ async def get_cart_insights(
     insights["selected_category"] = categories[0] if categories else (user_favcategory or "DOGS")
     insights["preferred_category"] = user_favcategory
     return insights
+
 
 @router.post("/chat")
 async def advisor_chat(chat_req: ChatRequest):

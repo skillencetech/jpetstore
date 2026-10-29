@@ -1,12 +1,14 @@
 from datetime import date
 from decimal import Decimal
-from typing import List, Optional
+
+from app.models.order import LineItem, Order, OrderStatus
 from app.repositories.order_repository import OrderRepository
-from app.models.order import Order, OrderStatus, LineItem
 from app.services.cart_service import CartItem
+
 
 class OutOfStockException(Exception):
     pass
+
 
 class OrderService:
     def __init__(self, order_repo: OrderRepository):
@@ -15,14 +17,14 @@ class OrderService:
     async def create_order(
         self,
         userid: str,
-        cart_items: List[CartItem],
+        cart_items: list[CartItem],
         bill_info: dict,
         ship_info: dict,
         credit_card: str,
         expr_date: str,
         card_type: str,
         courier: str = "UPS",
-        locale: str = "en_US"
+        locale: str = "en_US",
     ) -> Order:
         if not cart_items:
             raise ValueError("Cart is empty")
@@ -60,32 +62,23 @@ class OrderService:
             creditcard=credit_card,
             exprdate=expr_date,
             cardtype=card_type,
-            locale=locale
+            locale=locale,
         )
         await self.repo.insert_order(order)
 
         for idx, ci in enumerate(cart_items, start=1):
             line_item = LineItem(
-                orderid=order_id,
-                linenum=idx,
-                itemid=ci.item_id,
-                quantity=ci.quantity,
-                unitprice=ci.list_price
+                orderid=order_id, linenum=idx, itemid=ci.item_id, quantity=ci.quantity, unitprice=ci.list_price
             )
             await self.repo.insert_line_item(line_item)
 
-        status = OrderStatus(
-            orderid=order_id,
-            linenum=1,
-            timestamp=date.today(),
-            status="P"
-        )
+        status = OrderStatus(orderid=order_id, linenum=1, timestamp=date.today(), status="P")
         await self.repo.insert_order_status(status)
 
         return order
 
-    async def get_order(self, orderid: int) -> Optional[Order]:
+    async def get_order(self, orderid: int) -> Order | None:
         return await self.repo.get_order(orderid)
 
-    async def get_orders_by_username(self, username: str) -> List[Order]:
+    async def get_orders_by_username(self, username: str) -> list[Order]:
         return await self.repo.get_orders_by_username(username)

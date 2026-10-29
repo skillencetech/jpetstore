@@ -1,24 +1,27 @@
 import time
 from collections import OrderedDict
-from typing import List, Optional, Dict
-from sqlalchemy import select, or_
+
+from sqlalchemy import or_, select
 from sqlalchemy.orm import selectinload
+
+from app.models.catalog import Category, Inventory, Item, Product
 from app.repositories.base import BaseRepository
-from app.models.catalog import Category, Product, Item, Inventory
 
 # In-memory selective cache dictionary per ADR-005
 _CATEGORY_CACHE = {}
 _PRODUCT_CACHE = {}
 _ITEM_CACHE = {}
 
+
 class SearchCache:
     """High-performance LRU cache with TTL for search queries."""
+
     def __init__(self, maxsize: int = 256, ttl_seconds: int = 3600):
         self.maxsize = maxsize
         self.ttl = ttl_seconds
-        self._cache: OrderedDict[str, tuple[float, List[Product]]] = OrderedDict()
+        self._cache: OrderedDict[str, tuple[float, list[Product]]] = OrderedDict()
 
-    def get(self, query: str) -> Optional[List[Product]]:
+    def get(self, query: str) -> list[Product] | None:
         key = query.strip().lower()
         if key in self._cache:
             created_at, results = self._cache[key]
@@ -29,7 +32,7 @@ class SearchCache:
                 del self._cache[key]
         return None
 
-    def set(self, query: str, results: List[Product]):
+    def set(self, query: str, results: list[Product]):
         key = query.strip().lower()
         if key in self._cache:
             self._cache.move_to_end(key)
@@ -37,14 +40,16 @@ class SearchCache:
         if len(self._cache) > self.maxsize:
             self._cache.popitem(last=False)
 
+
 _SEARCH_CACHE = SearchCache(maxsize=256, ttl_seconds=3600)
+
 
 class CatalogRepository(BaseRepository):
     @staticmethod
     def get_search_cache() -> SearchCache:
         return _SEARCH_CACHE
 
-    async def get_category_list(self) -> List[Category]:
+    async def get_category_list(self) -> list[Category]:
         if "all" in _CATEGORY_CACHE:
             return _CATEGORY_CACHE["all"]
         stmt = select(Category).order_by(Category.catid)
@@ -53,7 +58,7 @@ class CatalogRepository(BaseRepository):
         _CATEGORY_CACHE["all"] = categories
         return categories
 
-    async def get_category(self, catid: str) -> Optional[Category]:
+    async def get_category(self, catid: str) -> Category | None:
         if catid in _CATEGORY_CACHE:
             return _CATEGORY_CACHE[catid]
         stmt = select(Category).where(Category.catid == catid)
@@ -63,7 +68,7 @@ class CatalogRepository(BaseRepository):
             _CATEGORY_CACHE[catid] = category
         return category
 
-    async def get_product_list_by_category(self, catid: str) -> List[Product]:
+    async def get_product_list_by_category(self, catid: str) -> list[Product]:
         cache_key = f"cat_{catid}"
         if cache_key in _PRODUCT_CACHE:
             return _PRODUCT_CACHE[cache_key]
@@ -73,7 +78,7 @@ class CatalogRepository(BaseRepository):
         _PRODUCT_CACHE[cache_key] = products
         return products
 
-    async def get_product(self, productid: str) -> Optional[Product]:
+    async def get_product(self, productid: str) -> Product | None:
         if productid in _PRODUCT_CACHE:
             return _PRODUCT_CACHE[productid]
         stmt = select(Product).where(Product.productid == productid)
@@ -83,7 +88,7 @@ class CatalogRepository(BaseRepository):
             _PRODUCT_CACHE[productid] = product
         return product
 
-    async def search_product_list(self, keywords: str) -> List[Product]:
+    async def search_product_list(self, keywords: str) -> list[Product]:
         cached = _SEARCH_CACHE.get(keywords)
         if cached is not None:
             return cached
@@ -103,7 +108,7 @@ class CatalogRepository(BaseRepository):
         _SEARCH_CACHE.set(keywords, products)
         return products
 
-    async def get_item_list_by_product(self, productid: str) -> List[Item]:
+    async def get_item_list_by_product(self, productid: str) -> list[Item]:
         stmt = (
             select(Item)
             .where(Item.productid == productid)
@@ -113,14 +118,14 @@ class CatalogRepository(BaseRepository):
         result = await self.session.execute(stmt)
         return list(result.scalars().all())
 
-    async def get_item(self, itemid: str) -> Optional[Item]:
+    async def get_item(self, itemid: str) -> Item | None:
         stmt = (
             select(Item)
             .where(Item.itemid == itemid)
             .options(
                 selectinload(Item.product_rel).selectinload(Product.category_rel),
                 selectinload(Item.supplier_rel),
-                selectinload(Item.inventory)
+                selectinload(Item.inventory),
             )
         )
         result = await self.session.execute(stmt)
